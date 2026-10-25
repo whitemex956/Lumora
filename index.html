@@ -1,0 +1,1653 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0c0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lumora">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-32.png" sizes="32x32">
+</head>
+<body>
+<title>Lumora</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+<style>
+/* Layout: iOS conventions (Apple's public Human Interface Guidelines).
+   Library: large title, edge-to-edge 3-column grid. Editor: black surface, photo
+   full width, one adjustment chosen from a row of round buttons and set with a
+   tick ruler. Sheets: iOS action sheets and modal sheets. Brand: Lumora board
+   (Obsidian, Graphite, Silver, Pearl White, Aurora Violet, Icy Blue; Inter;
+   thin wide wordmark). The aurora gradient is used sparingly: value rings, the
+   ruler pointer, the selected button's glow and the main button. Icons are our
+   own drawings (undo/redo arrows: Lucide, ISC licence). */
+:root {
+  color-scheme: dark;
+  /* roles from replica/design/tokens.json (Lumora brand board) */
+  --bg: #0b0c0f;            /* Obsidian */
+  --surface: #1f2228;       /* Graphite */
+  --surface-2: #2a2e36;
+  --separator: #3a3f4a;     /* decorative hairlines only */
+  --text: #f7f8fa;          /* Pearl White */
+  --text-silver: #c9cdd6;   /* Silver */
+  --text-muted: #9aa0ac;
+  --accent: #a78bfa;        /* Aurora Violet: tint for icons and text buttons */
+  --accent-2: #7dd3fc;      /* Icy Blue: second stop of the aurora gradient */
+  --on-accent: #0b0c0f;
+  --danger: #ff7a70;
+  --aurora: linear-gradient(135deg, var(--accent), var(--accent-2));
+  --glow: 0 0 0 1px rgb(167 139 250 / .55), 0 0 18px rgb(167 139 250 / .35), 0 0 32px rgb(125 211 252 / .18);
+  --material: rgb(31 34 40 / .78);
+  --scrim: rgb(0 0 0 / .5);
+  --icon-shadow: drop-shadow(0 1px 2px rgb(0 0 0 / .6));
+  --scale-cool: #5b8fd6;
+  --scale-warm: #d9b44a;
+  --scale-green: #6fb36a;
+  --scale-magenta: #c46fc0;
+  --font: Inter, -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, sans-serif;
+  --gutter-l: max(16px, env(safe-area-inset-left, 0px));
+  --gutter-r: max(16px, env(safe-area-inset-right, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+[hidden] { display: none !important; }
+html { box-sizing: border-box; height: 100%; background: var(--bg); }
+*, *::before, *::after { box-sizing: inherit; }
+body {
+  height: 100%; margin: 0; background: var(--bg); color: var(--text);
+  font: 17px/22px var(--font); letter-spacing: -0.011em; font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none; touch-action: manipulation;
+}
+button, label.btn-fill, label.nav-btn { font: inherit; letter-spacing: inherit; }
+button { color: inherit; }
+button { background: none; border: 0; padding: 0; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; }
+svg.i { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.9;
+  stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.view { height: 100%; display: grid; min-height: 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .view { animation: fade .18s ease-out; }
+  .sheet { animation: rise .26s cubic-bezier(.2, .8, .2, 1); }
+  .scrim { animation: fade .2s ease-out; }
+}
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes rise { from { transform: translateY(100%); } to { transform: none; } }
+
+/* navigation bars */
+.nav { padding-left: var(--gutter-l); padding-right: var(--gutter-r); }
+.nav-row { display: flex; align-items: center; justify-content: space-between; min-height: 44px; gap: 4px; }
+.nav-actions { display: flex; align-items: center; gap: 2px; margin-right: -10px; }
+.nav-btn { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px;
+  color: var(--accent); cursor: pointer; }
+.nav-btn.text { gap: 2px; margin-left: -8px; padding-right: 4px; font-size: 17px; }
+.nav-btn[disabled] { color: var(--text-muted); opacity: .55; cursor: default; }
+.large-title { margin: 6px 0 0; line-height: 0; }
+.wordmark { display: block; height: 26px; width: auto; max-width: 100%; color: var(--text); }
+.tagline { margin: 10px 0 4px; font-size: 13px; line-height: 18px; font-weight: 300; letter-spacing: .14em; color: var(--text-silver); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.footnote { margin: 0; font-size: 13px; line-height: 18px; color: var(--text-muted); letter-spacing: 0; }
+.footnote.warn { color: var(--danger); }
+
+/* library */
+#library { grid-template-rows: auto 1fr auto; }
+#library .nav { padding-bottom: 10px; }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; align-content: start;
+  overflow-y: auto; min-height: 0; -webkit-overflow-scrolling: touch;
+  padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
+@media (min-width: 600px) { .grid { grid-template-columns: repeat(5, 1fr); } }
+.tile { position: relative; display: block; aspect-ratio: 1; max-width: 100%; overflow: hidden; background: var(--surface); }
+.tile img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tile .fmt { position: absolute; left: 6px; bottom: 5px; font-size: 11px; line-height: 13px; font-weight: 600;
+  letter-spacing: .02em; color: var(--text); text-shadow: 0 1px 2px rgb(0 0 0 / .7); }
+.tile .edited { position: absolute; right: 5px; bottom: 4px; width: 16px; height: 16px; color: var(--text);
+  stroke-width: 2.2; filter: var(--icon-shadow); }
+.tile:focus-visible { outline-offset: -2px; border-radius: 0; }
+
+.empty { grid-column: 1 / -1; display: grid; justify-items: center; text-align: center; gap: 10px;
+  padding-block: 64px 32px; padding-left: var(--gutter-l); padding-right: var(--gutter-r); }
+.empty .art { width: 64px; height: 64px; color: var(--text-muted); stroke-width: 1.4; }
+.empty h2 { margin: 6px 0 0; font-size: 20px; line-height: 25px; font-weight: 600; }
+.empty p { margin: 0 0 10px; max-width: 30ch; font-size: 15px; line-height: 20px; color: var(--text-muted); }
+.btn-fill { display: inline-flex; align-items: center; justify-content: center; min-height: 50px; padding: 0 22px;
+  border-radius: 12px; background: var(--aurora); color: var(--on-accent); font-weight: 600; cursor: pointer;
+  box-shadow: 0 6px 24px rgb(167 139 250 / .25); }
+.btn-fill.block { width: 100%; }
+.btn-fill[disabled] { opacity: .5; }
+.btn-text { min-height: 44px; padding: 0 8px; color: var(--accent); font-size: 17px; }
+
+/* editor */
+#editor { grid-template-rows: auto 1fr auto auto; }
+.stage { position: relative; min-height: 0; display: flex; align-items: center; justify-content: center;
+  background: var(--bg); overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none;
+  -webkit-touch-callout: none; }
+.clip { position: absolute; overflow: hidden; }
+.clip.open { overflow: visible; }
+.clip canvas { position: absolute; display: block; transform-origin: 50% 50%; max-width: none; }
+
+/* crop frame: drag inside to move, corners and edges to resize; outside is dimmed */
+.crop-frame { position: absolute; border: 1px solid rgb(247 248 250 / .9); box-shadow: 0 0 0 9999px rgb(11 12 15 / .62);
+  touch-action: none; cursor: move; z-index: 2; }
+.crop-frame.dragging { box-shadow: 0 0 0 9999px rgb(11 12 15 / .4); }
+.crop-frame .grid3 { position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: opacity .15s;
+  background:
+    linear-gradient(90deg, transparent calc(33.333% - .5px), rgb(247 248 250 / .45) calc(33.333% - .5px), rgb(247 248 250 / .45) calc(33.333% + .5px), transparent calc(33.333% + .5px), transparent calc(66.666% - .5px), rgb(247 248 250 / .45) calc(66.666% - .5px), rgb(247 248 250 / .45) calc(66.666% + .5px), transparent calc(66.666% + .5px)),
+    linear-gradient(180deg, transparent calc(33.333% - .5px), rgb(247 248 250 / .45) calc(33.333% - .5px), rgb(247 248 250 / .45) calc(33.333% + .5px), transparent calc(33.333% + .5px), transparent calc(66.666% - .5px), rgb(247 248 250 / .45) calc(66.666% - .5px), rgb(247 248 250 / .45) calc(66.666% + .5px), transparent calc(66.666% + .5px)); }
+.crop-frame.dragging .grid3 { opacity: 1; }
+.crop-frame .h { position: absolute; width: 24px; height: 24px; border: 0 solid var(--text); }
+.crop-frame .h::after, .crop-frame .e::after { content: ""; position: absolute; inset: -14px; }
+.crop-frame .nw { left: -4px; top: -4px; border-left-width: 4px; border-top-width: 4px; cursor: nwse-resize; }
+.crop-frame .ne { right: -4px; top: -4px; border-right-width: 4px; border-top-width: 4px; cursor: nesw-resize; }
+.crop-frame .sw { left: -4px; bottom: -4px; border-left-width: 4px; border-bottom-width: 4px; cursor: nesw-resize; }
+.crop-frame .se { right: -4px; bottom: -4px; border-right-width: 4px; border-bottom-width: 4px; cursor: nwse-resize; }
+.crop-frame .e { position: absolute; }
+.crop-frame .n, .crop-frame .s { left: 30px; right: 30px; height: 2px; cursor: ns-resize; }
+.crop-frame .n { top: -1px; } .crop-frame .s { bottom: -1px; }
+.crop-frame .ee, .crop-frame .w { top: 30px; bottom: 30px; width: 2px; cursor: ew-resize; }
+.crop-frame .ee { right: -1px; } .crop-frame .w { left: -1px; }
+.stage .badge { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); padding: 4px 10px;
+  border-radius: 999px; background: var(--material); -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px); font-size: 12px; line-height: 16px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase; }
+.stage .loading { position: absolute; color: var(--text-muted); font-size: 15px; }
+
+.controls { display: grid; justify-items: center; gap: 2px; padding-block: 10px 14px;
+  padding-left: var(--gutter-l); padding-right: var(--gutter-r); }
+.adj-name { margin: 0; font-size: 12px; line-height: 16px; font-weight: 600; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--text-muted); }
+.adj-value { margin: 0; min-height: 24px; font-size: 20px; line-height: 24px; font-weight: 500;
+  font-variant-numeric: tabular-nums; letter-spacing: 0; }
+.adj-value.zero { color: var(--text-muted); }
+.ruler { display: block; width: 100%; max-width: 560px; height: 44px; touch-action: none; cursor: ew-resize;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent); }
+.scale { width: 100%; max-width: 560px; height: 3px; border-radius: 2px; margin-top: -2px;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent); }
+.scale.temp { background: linear-gradient(90deg, var(--scale-cool), var(--text-muted) 50%, var(--scale-warm)); }
+.scale.tint { background: linear-gradient(90deg, var(--scale-green), var(--text-muted) 50%, var(--scale-magenta)); }
+.scale.none { visibility: hidden; }
+
+/* full-bleed row; spacers let the first and last button reach the centre */
+.adj-row { display: flex; align-items: center; gap: 14px; justify-self: stretch; margin-top: 8px;
+  margin-left: calc(-1 * var(--gutter-l)); margin-right: calc(-1 * var(--gutter-r));
+  overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; padding-block: 4px; }
+.adj-row::before, .adj-row::after { content: ""; flex: 0 0 calc(50% - 40px); }
+.adj-row::-webkit-scrollbar { display: none; }
+.adj-group { display: flex; gap: 14px; }
+.adj { position: relative; flex: 0 0 52px; width: 52px; height: 52px; border-radius: 50%; display: grid;
+  place-items: center; color: var(--text-muted); scroll-snap-align: center; }
+.adj .ring { position: absolute; inset: 0; width: 52px; height: 52px; transform: rotate(-90deg); pointer-events: none; }
+.ring .track { fill: none; stroke: var(--separator); stroke-width: 1.5; }
+.ring .arc { fill: none; stroke: url(#aurora); stroke-width: 2.5; stroke-linecap: round; }
+.adj[aria-checked="true"] { color: var(--text); background: var(--surface); box-shadow: var(--glow); }
+.adj.auto[aria-pressed="true"] { color: var(--accent); }
+.adj.auto[aria-pressed="true"] .ring .track { stroke: url(#aurora); stroke-width: 2.5; }
+.adj:focus-visible { border-radius: 50%; }
+
+/* crop tools row */
+.crop-row { display: flex; align-items: center; gap: 8px; justify-self: stretch; margin-top: 10px;
+  margin-left: calc(-1 * var(--gutter-l)); margin-right: calc(-1 * var(--gutter-r));
+  padding-left: var(--gutter-l); padding-right: var(--gutter-r); padding-block: 4px 6px;
+  overflow-x: auto; scrollbar-width: none; }
+.crop-row::-webkit-scrollbar { display: none; }
+.tool { flex: none; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
+  color: var(--text); background: var(--surface); }
+.vsep { flex: none; width: 1px; height: 24px; background: var(--separator); margin-inline: 2px; }
+.chip { flex: none; min-height: 34px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--separator);
+  color: var(--text-silver); font-size: 15px; font-variant-numeric: tabular-nums; }
+.chip[aria-pressed="true"] { background: var(--aurora); border-color: transparent; color: var(--on-accent); font-weight: 600; }
+.crop-row .btn-text { flex: none; }
+
+/* mode bar: Ajustar / Recortar */
+.modebar { display: flex; justify-content: center; gap: 10px; padding-block: 4px 6px;
+  padding-left: var(--gutter-l); padding-right: var(--gutter-r); }
+.mode { display: grid; justify-items: center; gap: 3px; min-width: 84px; padding: 7px 12px 6px; border-radius: 14px;
+  color: var(--text-muted); font-size: 11px; line-height: 13px; font-weight: 500; letter-spacing: .01em; }
+.mode svg.i { width: 22px; height: 22px; }
+.mode[aria-selected="true"] { color: var(--text); background: var(--surface); box-shadow: inset 0 0 0 1px rgb(167 139 250 / .35); }
+.mode[aria-selected="true"] svg { color: var(--accent); }
+
+/* presets row */
+.preset-row { display: flex; align-items: flex-start; gap: 10px; justify-self: stretch; margin-top: 8px;
+  margin-left: calc(-1 * var(--gutter-l)); margin-right: calc(-1 * var(--gutter-r));
+  padding-left: var(--gutter-l); padding-right: var(--gutter-r); padding-block: 6px 4px;
+  overflow-x: auto; scrollbar-width: none; }
+.preset-row::-webkit-scrollbar { display: none; }
+.ptile { flex: none; display: grid; justify-items: center; gap: 6px; width: 70px; color: var(--text-muted);
+  font-size: 11px; line-height: 13px; font-weight: 500; text-align: center; -webkit-touch-callout: none; user-select: none; }
+.ptile canvas, .ptile .addbox { display: block; width: 64px; height: 64px; border-radius: 12px; background: var(--surface); }
+.ptile span { max-width: 70px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ptile[aria-pressed="true"] { color: var(--text); }
+.ptile[aria-pressed="true"] canvas { box-shadow: var(--glow); }
+.ptile .addbox { display: grid; place-items: center; background: transparent; border: 1.5px dashed var(--separator); color: var(--accent); }
+.preset-row .vsep { align-self: center; margin-top: -18px; height: 40px; }
+
+/* library selection */
+.tile .check { position: absolute; right: 6px; top: 6px; width: 22px; height: 22px; border-radius: 50%;
+  border: 1.5px solid var(--text); background: rgb(11 12 15 / .35); display: none; }
+.selecting .tile .check { display: block; }
+.tile.sel .check { border-color: transparent; background: var(--aurora); }
+.tile.sel .check::after { content: ""; position: absolute; left: 7px; top: 3.5px; width: 5px; height: 10px;
+  border: solid var(--on-accent); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.tile.sel img { opacity: .78; }
+.select-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-block: 10px;
+  padding-left: var(--gutter-l); padding-right: var(--gutter-r); background: var(--material);
+  -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  border-top: 1px solid var(--separator); }
+.select-bar .btn-fill { min-height: 44px; padding: 0 18px; font-size: 16px; }
+
+/* form parts inside sheets */
+.field { display: grid; gap: 6px; }
+.field label, .field-label { margin: 0; font-size: 13px; line-height: 18px; color: var(--text-muted); letter-spacing: 0; }
+.field input { width: 100%; min-height: 44px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--separator);
+  background: var(--surface-2); color: var(--text); font: inherit; font-size: 17px; }
+.field input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.list { background: var(--surface-2); border-radius: 12px; overflow: hidden; }
+.switch-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 48px; padding: 0 14px; }
+.switch-row + .switch-row { border-top: 1px solid var(--separator); }
+.switch-row span small { display: block; font-size: 13px; line-height: 16px; color: var(--text-muted); }
+.switch { -webkit-appearance: none; appearance: none; flex: none; position: relative; width: 51px; height: 31px; margin: 0;
+  border-radius: 16px; background: var(--separator); cursor: pointer; transition: background .15s; }
+.switch::after { content: ""; position: absolute; left: 2px; top: 2px; width: 27px; height: 27px; border-radius: 50%;
+  background: var(--text); box-shadow: 0 2px 4px rgb(0 0 0 / .35); transition: transform .15s; }
+.switch:checked { background: var(--accent); }
+.switch:checked::after { transform: translateX(20px); }
+.switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.seg { display: flex; padding: 2px; border-radius: 9px; background: var(--surface-2); }
+.seg button { flex: 1; min-height: 32px; border-radius: 7px; font-size: 14px; font-weight: 500; color: var(--text-silver);
+  font-variant-numeric: tabular-nums; }
+.seg button[aria-pressed="true"] { background: var(--separator); color: var(--text); font-weight: 600; }
+.sheet-nav .btn-text.left { justify-self: start; margin-left: -8px; margin-right: 0; }
+.sheet-nav .btn-text.strong { font-weight: 600; }
+
+/* sheets */
+.scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 20; }
+.sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 21; }
+.sheet.action { display: grid; gap: 8px; padding-left: max(8px, env(safe-area-inset-left, 0px));
+  padding-right: max(8px, env(safe-area-inset-right, 0px)); padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  max-width: 560px; margin-inline: auto; }
+.group { background: var(--surface); border-radius: 14px; overflow: hidden; }
+.group .msg { margin: 0; padding: 14px 16px; text-align: center; font-size: 13px; line-height: 18px;
+  color: var(--text-muted); border-bottom: 1px solid var(--separator); letter-spacing: 0; }
+.group .msg strong { display: block; color: var(--text); font-weight: 600; margin-bottom: 2px; }
+.as-btn { display: block; width: 100%; min-height: 57px; font-size: 20px; line-height: 24px; color: var(--accent); }
+.as-btn + .as-btn { border-top: 1px solid var(--separator); }
+.as-btn.danger { color: var(--danger); }
+.as-btn.cancel { font-weight: 600; }
+.sheet.modal { display: grid; gap: 14px; background: var(--surface); border-radius: 12px 12px 0 0;
+  padding-top: 6px; padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  padding-left: var(--gutter-l); padding-right: var(--gutter-r); max-height: 92%; overflow-y: auto; }
+.grabber { justify-self: center; width: 36px; height: 5px; border-radius: 3px; background: var(--separator); }
+.sheet-nav { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; min-height: 44px; }
+.sheet-nav h2 { margin: 0; font-size: 17px; line-height: 22px; font-weight: 600; text-align: center; }
+.sheet-nav .btn-text { justify-self: end; margin-right: -8px; }
+.sheet.modal img { max-width: 100%; max-height: 46vh; justify-self: center; border-radius: 10px; -webkit-touch-callout: default; }
+.facts { margin: 0; text-align: center; font-size: 13px; line-height: 18px; color: var(--text-muted);
+  font-variant-numeric: tabular-nums; letter-spacing: 0; }
+
+.toast { position: fixed; left: 50%; transform: translateX(-50%); top: calc(64px + env(safe-area-inset-top, 0px));
+  z-index: 30; max-width: calc(100% - 48px); padding: 10px 16px; border-radius: 999px; text-align: center;
+  background: var(--material); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  font-size: 15px; line-height: 20px; }
+</style>
+
+<section id="library" class="view" aria-label="Fotos">
+  <header class="nav">
+    <div class="nav-row">
+      <span></span>
+      <div class="nav-actions">
+      <button id="selectBtn" class="btn-text" type="button" hidden>Seleccionar</button>
+      <label class="nav-btn" for="pick" aria-label="Añadir fotos" role="button" tabindex="0">
+        <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      </label>
+      </div>
+      <input id="pick" type="file" accept="image/jpeg,image/heic,image/heif,.jpg,.jpeg,.heic,.heif" multiple hidden>
+    </div>
+    <h1 class="large-title"><span class="sr-only">Lumora</span>
+      <svg class="wordmark" viewBox="0 0 300 40" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="miter">
+        <path d="M2 2V38H30"/>
+        <path d="M54 2V24a14 14 0 0 0 28 0V2"/>
+        <path d="M106 38V2l18 28 18-28v36"/>
+        <circle cx="179" cy="20" r="18"/>
+        <path d="M216 38V2h16a10 10 0 0 1 0 20h-16M230 22l16 16"/>
+        <path d="M262 38 280 2l18 36"/>
+      </svg>
+    </h1>
+    <p class="tagline">Light. Tone. Precision.</p>
+    <p id="libNotice" class="footnote">JPG y HEIC · solo en este iPhone</p>
+  </header>
+  <div id="grid" class="grid"></div>
+  <div id="selectBar" class="select-bar" hidden>
+    <span id="selCount" class="footnote">Toca las fotos a las que quieres pegar los ajustes</span>
+    <button id="pasteSelBtn" class="btn-fill" type="button" disabled>Pegar ajustes</button>
+  </div>
+</section>
+
+<section id="editor" class="view" aria-label="Editor" hidden>
+  <header class="nav">
+    <div class="nav-row">
+      <button id="back" class="nav-btn text" type="button">
+        <svg class="i" viewBox="0 0 24 24" aria-hidden="true" style="stroke-width:2.4"><path d="m15 5-7 7 7 7"/></svg>Fotos
+      </button>
+      <div class="nav-actions">
+        <button id="undoBtn" class="nav-btn" type="button" aria-label="Deshacer" disabled>
+          <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
+        </button>
+        <button id="redoBtn" class="nav-btn" type="button" aria-label="Rehacer" disabled>
+          <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>
+        </button>
+        <button id="moreBtn" class="nav-btn" type="button" aria-label="Más opciones">
+          <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><circle cx="7.6" cy="12" r=".9" fill="currentColor"/><circle cx="12" cy="12" r=".9" fill="currentColor"/><circle cx="16.4" cy="12" r=".9" fill="currentColor"/></svg>
+        </button>
+        <button id="exportBtn" class="nav-btn" type="button" aria-label="Exportar">
+          <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5v11"/><path d="m8 7.5 4-4 4 4"/><path d="M8.5 10.5H6.5a1.5 1.5 0 0 0-1.5 1.5v7a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5v-7a1.5 1.5 0 0 0-1.5-1.5h-2"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+  <div id="stage" class="stage">
+    <div id="clip" class="clip"><canvas id="view" aria-label="Foto en edición"></canvas></div>
+    <div id="cropFrame" class="crop-frame" hidden aria-hidden="true">
+      <div class="grid3"></div>
+      <span class="h nw" data-h="nw"></span><span class="h ne" data-h="ne"></span>
+      <span class="h sw" data-h="sw"></span><span class="h se" data-h="se"></span>
+      <span class="e n" data-h="n"></span><span class="e s" data-h="s"></span>
+      <span class="e ee" data-h="e"></span><span class="e w" data-h="w"></span>
+    </div>
+    <span id="origBadge" class="badge" hidden>Antes</span>
+    <span id="loading" class="loading" hidden>Abriendo…</span>
+  </div>
+  <div class="controls">
+    <p id="adjName" class="adj-name">Exposición</p>
+    <p id="adjValue" class="adj-value" aria-hidden="true">0</p>
+    <canvas id="ruler" class="ruler" role="slider" tabindex="0" aria-labelledby="adjName"></canvas>
+    <span id="scale" class="scale none" aria-hidden="true"></span>
+    <div id="adjRow" class="adj-row"></div>
+    <div id="cropRow" class="crop-row" hidden>
+      <button id="rotBtn" class="tool" type="button" aria-label="Girar 90° a la izquierda">
+        <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9"/><path d="M4.5 4.5V9H9"/></svg>
+      </button>
+      <button id="flipBtn" class="tool" type="button" aria-label="Voltear en horizontal">
+        <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18" stroke-dasharray="2 2.5"/><path d="M9 7 4 17h5z"/><path d="M15 7l5 10h-5z"/></svg>
+      </button>
+      <span class="vsep" aria-hidden="true"></span>
+      <div id="chips" role="group" aria-label="Proporción" style="display:flex;gap:8px"></div>
+      <span class="vsep" aria-hidden="true"></span>
+      <button id="cropReset" class="btn-text" type="button">Restablecer</button>
+    </div>
+    <div id="presetRow" class="preset-row" hidden role="group" aria-label="Presets"></div>
+  </div>
+  <nav class="modebar" role="tablist" aria-label="Modo de edición">
+    <button id="mode-adjust" class="mode" role="tab" type="button" aria-selected="true">
+      <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>Ajustar
+    </button>
+    <button id="mode-presets" class="mode" role="tab" type="button" aria-selected="false">
+      <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="7.5" width="13" height="13" rx="2.5"/><path d="M7.5 4.5h10a2.5 2.5 0 0 1 2.5 2.5v10"/></svg>Presets
+    </button>
+    <button id="mode-crop" class="mode" role="tab" type="button" aria-selected="false">
+      <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v14h14"/><path d="M3 7h14v14"/></svg>Recortar
+    </button>
+  </nav>
+</section>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs><linearGradient id="aurora" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" style="stop-color: var(--accent)"/><stop offset="1" style="stop-color: var(--accent-2)"/>
+  </linearGradient></defs>
+</svg>
+<div id="scrim" class="scrim" hidden></div>
+<div id="sheet" class="sheet" role="dialog" aria-modal="true" hidden></div>
+<div id="toast" class="toast" role="status" hidden></div>
+
+<script>
+(() => {
+'use strict';
+const $ = (s) => document.querySelector(s);
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now().toString(36) + Math.random().toString(36).slice(2));
+const now = () => new Date().toISOString();
+const reduceMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* every adjustment, in row order. group = where it is stored (schema: settings.light / settings.color).
+   glyph = our own icon drawing (24 x 24 grid). */
+const SLIDERS = [
+  { key: 'exposure', group: 'light', label: 'Exposición', min: -4, max: 4, step: 0.05,
+    glyph: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>' },
+  { key: 'contrast', group: 'light', label: 'Contraste', min: -100, max: 100, step: 1,
+    glyph: '<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/>' },
+  { key: 'highlights', group: 'light', label: 'Altas luces', min: -100, max: 100, step: 1,
+    glyph: '<circle cx="12" cy="12" r="8"/><path d="M4 12a8 8 0 0 1 16 0z" fill="currentColor"/>' },
+  { key: 'shadows', group: 'light', label: 'Sombras', min: -100, max: 100, step: 1,
+    glyph: '<circle cx="12" cy="12" r="8"/><path d="M4 12a8 8 0 0 0 16 0z" fill="currentColor"/>' },
+  { key: 'whites', group: 'light', label: 'Blancos', min: -100, max: 100, step: 1,
+    glyph: '<circle cx="12" cy="12" r="7" fill="currentColor"/>' },
+  { key: 'blacks', group: 'light', label: 'Negros', min: -100, max: 100, step: 1,
+    glyph: '<circle cx="12" cy="12" r="6" style="stroke-width:3.6"/>' },
+  { key: 'temp', group: 'color', label: 'Temperatura', min: -100, max: 100, step: 1, scale: 'temp',
+    glyph: '<path d="M10 14V5a2 2 0 0 1 4 0v9a4 4 0 1 1-4 0z"/><path d="M12 10v6"/>' },
+  { key: 'tint', group: 'color', label: 'Matiz', min: -100, max: 100, step: 1, scale: 'tint',
+    glyph: '<circle cx="12" cy="12" r="8"/><path d="M17.66 6.34A8 8 0 0 1 6.34 17.66z" fill="currentColor"/>' },
+  { key: 'vibrance', group: 'color', label: 'Intensidad', min: -100, max: 100, step: 1,
+    glyph: '<path d="M12 3.5c-3 4-6 7.3-6 10.5a6 6 0 0 0 12 0c0-3.2-3-6.5-6-10.5z"/>' },
+  { key: 'saturation', group: 'color', label: 'Saturación', min: -100, max: 100, step: 1,
+    glyph: '<circle cx="12" cy="8.6" r="4.4"/><circle cx="8.4" cy="14.6" r="4.4"/><circle cx="15.6" cy="14.6" r="4.4"/>' },
+];
+const BY_KEY = Object.fromEntries(SLIDERS.map((d) => [d.key, d]));
+const DEFAULTS = Object.fromEntries(SLIDERS.map((s) => [s.key, 0]));
+/* crop, in the oriented image (after flip, then rot): centre and size as fractions
+   of its width and height; angle = straighten in degrees; aspect = w / h or null (free) */
+const DEFAULT_CROP = { cx: 0, cy: 0, w: 1, h: 1, angle: 0, rot: 0, flip: false, aspect: null };
+const ANGLE = { key: 'angle', label: 'Enderezar', min: -45, max: 45, step: 0.1, ticks: 90, majorStep: 15 };
+const RATIOS = [['Libre', null], ['Original', 'orig'], ['1:1', 1], ['4:5', 4 / 5], ['5:4', 5 / 4], ['3:2', 3 / 2], ['2:3', 2 / 3], ['16:9', 16 / 9], ['9:16', 9 / 16]];
+const clone = (s) => ({ ...s, crop: { ...s.crop }, preset: s.preset ? { ...s.preset } : null });
+const AMOUNT = { key: 'amount', label: 'Cantidad', min: 0, max: 200, step: 1, ticks: 80, majorStep: 50, ref: 100 };
+/* Lumora's own built-in presets: values are added on top of the photo's own adjustments,
+   scaled by Cantidad (100 = as designed). Names and values are ours. */
+const BUILTIN_PRESETS = [
+  { id: 'b-natural',   name: 'Natural',   values: { contrast: 8, highlights: -15, shadows: 10, vibrance: 15 } },
+  { id: 'b-luminoso',  name: 'Luminoso',  values: { exposure: 0.3, highlights: -20, shadows: 25, whites: 10, vibrance: 10 } },
+  { id: 'b-aurora',    name: 'Aurora',    values: { temp: -8, tint: 12, highlights: -20, shadows: 15, vibrance: 20 } },
+  { id: 'b-calido',    name: 'Cálido',    values: { temp: 25, tint: 4, contrast: 5, vibrance: 10 } },
+  { id: 'b-frio',      name: 'Frío',      values: { temp: -22, tint: -3, contrast: 8, saturation: -5 } },
+  { id: 'b-mate',      name: 'Mate',      values: { contrast: -15, highlights: -10, blacks: 30, saturation: -10 } },
+  { id: 'b-pelicula',  name: 'Película',  values: { temp: 8, highlights: -25, blacks: 25, saturation: -15, contrast: 6 } },
+  { id: 'b-intenso',   name: 'Intenso',   values: { contrast: 35, whites: 15, blacks: -20, vibrance: 8 } },
+  { id: 'b-bn-suave',  name: 'B/N suave', values: { saturation: -100, contrast: 15, shadows: 10 } },
+  { id: 'b-bn-fuerte', name: 'B/N fuerte', values: { saturation: -100, contrast: 45, whites: 20, blacks: -20 } },
+];
+const presetById = (id) => BUILTIN_PRESETS.find((x) => x.id === id) || state.userPresets.find((x) => x.id === id) || null;
+// what the renderer sees: the photo's own values plus the preset, scaled by its amount
+function effective(s) {
+  const out = { ...s };
+  const pr = s.preset && presetById(s.preset.id);
+  if (pr) {
+    const f = s.preset.amount / 100;
+    for (const d of SLIDERS) {
+      const add = (pr.values[d.key] || 0) * f;
+      if (add) out[d.key] = Math.min(d.max, Math.max(d.min, s[d.key] + add));
+    }
+  }
+  return out;
+}
+const HISTORY_MAX = 100;
+const PREVIEW_EDGE = 2048, PREVIEW_PX = 6e6;   // edit on a reduced copy (Safari memory limits)
+const EXPORT_PX = 16e6;                         // iOS canvas ceiling is about 16.7 megapixels
+const RULER_SPAN = 640;                         // css px the whole range spans on the ruler
+const AUTO_GLYPH = '<path d="M12 3.5 13.9 10.1 20.5 12 13.9 13.9 12 20.5 10.1 13.9 3.5 12 10.1 10.1z"/>';
+const ICON_EDITED = '<path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/>';
+
+/* ---------- local storage: IndexedDB, memory fallback ---------- */
+const store = (() => {
+  const mem = { photos: new Map(), edits: new Map(), presets: new Map() };
+  let dbp = null, volatile = false;
+  const rq = (r) => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+  function open() {
+    if (dbp) return dbp;
+    dbp = new Promise((resolve) => {
+      try {
+        const req = indexedDB.open('revelado', 2);   // internal name from before the rename; kept so saved photos stay
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains('photos')) db.createObjectStore('photos', { keyPath: 'id' }).createIndex('addedAt', 'addedAt');
+          if (!db.objectStoreNames.contains('edits')) db.createObjectStore('edits', { keyPath: 'photoId' });
+          if (!db.objectStoreNames.contains('presets')) db.createObjectStore('presets', { keyPath: 'id' });   // v2: my presets
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => { volatile = true; resolve(null); };
+        req.onblocked = () => { volatile = true; resolve(null); };
+      } catch (e) { volatile = true; resolve(null); }
+    });
+    return dbp;
+  }
+  const key = (name, v) => name === 'edits' ? v.photoId : v.id;
+  return {
+    get isVolatile() { return volatile; },
+    open,
+    async get(name, k) {
+      const db = await open();
+      if (db) { try { const v = await rq(db.transaction(name).objectStore(name).get(k)); if (v !== undefined) return v; } catch (e) { volatile = true; } }
+      return mem[name].get(k);
+    },
+    async all(name) {
+      const db = await open();
+      if (db) { try { return await rq(db.transaction(name).objectStore(name).getAll()); } catch (e) { volatile = true; } }
+      return [...mem[name].values()];
+    },
+    async put(name, v) {
+      const db = await open();
+      if (db) { try { await rq(db.transaction(name, 'readwrite').objectStore(name).put(v)); return; } catch (e) { volatile = true; } }
+      mem[name].set(key(name, v), v);
+    },
+    async del(name, k) {
+      mem[name].delete(k);
+      const db = await open();
+      if (db) { try { await rq(db.transaction(name, 'readwrite').objectStore(name).delete(k)); } catch (e) { volatile = true; } }
+    },
+    async removePhoto(id) {
+      mem.photos.delete(id); mem.edits.delete(id);
+      const db = await open();
+      if (!db) return;
+      await new Promise((res) => {
+        try {
+          const t = db.transaction(['photos', 'edits'], 'readwrite');
+          t.objectStore('photos').delete(id); t.objectStore('edits').delete(id);
+          t.oncomplete = res; t.onerror = res; t.onabort = res;
+        } catch (e) { res(); }
+      });
+    },
+  };
+})();
+
+/* ---------- images ---------- */
+async function decode(blob) {
+  const url = URL.createObjectURL(blob);
+  const img = new Image();
+  img.src = url;
+  try { await img.decode(); } catch (e) { URL.revokeObjectURL(url); throw new Error('decode'); }
+  return { img, done: () => URL.revokeObjectURL(url) };
+}
+function fit(w, h, maxEdge, maxPx) {
+  const s = Math.min(1, maxEdge / Math.max(w, h), Math.sqrt(maxPx / (w * h)));
+  return [Math.max(1, Math.round(w * s)), Math.max(1, Math.round(h * s))];
+}
+function rasterize(src, w, h) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  const ctx = c.getContext('2d'); ctx.imageSmoothingQuality = 'high'; ctx.drawImage(src, 0, 0, w, h);
+  return c;
+}
+const toBlob = (c, type, q) => new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('encode'))), type, q));
+const isAccepted = (f) => /^image\/(jpeg|heic|heif)$/i.test(f.type) || /\.(jpe?g|heic|heif)$/i.test(f.name || '');
+const baseName = (n) => (n || 'foto').replace(/\.[^.]+$/, '');
+const decimal = (v, d) => Math.abs(v).toFixed(d).replace('.', ',');
+const megapixels = (w, h) => decimal(w * h / 1e6, 1) + ' MP';
+const fileSize = (b) => b < 1048576 ? Math.round(b / 1024) + ' KB' : decimal(b / 1048576, 1) + ' MB';
+
+/* ---------- GPU pipeline (WebGL2) ----------
+   sRGB -> linear -> white balance -> exposure -> contrast -> tone (highlights, shadows,
+   whites, blacks on luminance, colour ratios kept) -> vibrance -> saturation -> sRGB */
+const VS = `#version 300 es
+in vec2 p; out vec2 uv;
+void main() { uv = vec2(p.x * .5 + .5, .5 - p.y * .5); gl_Position = vec4(p, 0., 1.); }`;
+const FS = `#version 300 es
+precision highp float;
+in vec2 uv; out vec4 o;
+uniform sampler2D img; uniform bool orig;
+uniform float ev;    // exposure, stops
+uniform float con;   // contrast, -0.6..0.6
+uniform vec4 tone;   // highlights, shadows, whites, blacks, each -1..1
+uniform vec2 wb;     // temperature, tint, each -1..1
+uniform vec2 col;    // vibrance, saturation, each -1..1
+const vec3 LW = vec3(.2126, .7152, .0722);
+vec3 toLinear(vec3 c) { return mix(c / 12.92, pow((c + .055) / 1.055, vec3(2.4)), step(.04045, c)); }
+vec3 toSrgb(vec3 c) { c = clamp(c, 0., 1.); return mix(c * 12.92, 1.055 * pow(c, vec3(1. / 2.4)) - .055, step(.0031308, c)); }
+void main() {
+  vec4 t = texture(img, uv);
+  if (orig) { o = vec4(t.rgb, 1.); return; }
+  vec3 l = toLinear(t.rgb);
+
+  // white balance: warm = more red, less blue; tint + = magenta (less green). Gains keep brightness.
+  vec3 g = vec3(exp2(.35 * wb.x + .12 * wb.y), exp2(-.30 * wb.y), exp2(-.35 * wb.x + .12 * wb.y));
+  l *= g / dot(g, LW);
+
+  l *= exp2(ev);                                             // exposure in stops
+  l = .18 * pow(max(l, vec3(1e-6)) / .18, vec3(1. + con));   // contrast pivots on middle grey
+
+  // tone on luminance in a perceptual space, then scale RGB by the change (keeps hue)
+  float y = max(dot(l, LW), 1e-6);
+  float p = pow(min(y, 4.), 1. / 2.2);
+  float q = clamp(p, 0., 1.);
+  p += tone.x * .30 * smoothstep(.40, 1., q);                                   // highlights
+  p += tone.y * .30 * q * (1. - smoothstep(0., .65, q)) * 2.5;                  // shadows
+  p += tone.z * .12 * smoothstep(.60, 1., q);                                   // whites
+  p += tone.w * .10 * (1. - smoothstep(0., .35, q));                            // blacks
+  l *= pow(max(p, 0.), 2.2) / y;
+
+  // vibrance boosts muted colours more than saturated ones; saturation is uniform
+  float mx = max(max(l.r, l.g), l.b), mn = min(min(l.r, l.g), l.b);
+  float s = mx > 1e-5 ? (mx - mn) / mx : 0.;
+  float Y = dot(l, LW);
+  l = mix(vec3(Y), l, 1. + col.x * (1. - s));
+  l = mix(vec3(Y), l, 1. + col.y);
+  o = vec4(toSrgb(max(l, 0.)), 1.);
+}`;
+class Renderer {
+  constructor(canvas, keep = false) {
+    const gl = canvas.getContext('webgl2', { premultipliedAlpha: false, preserveDrawingBuffer: keep, antialias: false, alpha: false });
+    if (!gl) throw new Error('webgl');
+    this.gl = gl; this.canvas = canvas;
+    const sh = (type, src) => {
+      const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s));
+      return s;
+    };
+    const pr = gl.createProgram();
+    gl.attachShader(pr, sh(gl.VERTEX_SHADER, VS)); gl.attachShader(pr, sh(gl.FRAGMENT_SHADER, FS));
+    gl.bindAttribLocation(pr, 0, 'p'); gl.linkProgram(pr);
+    if (!gl.getProgramParameter(pr, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(pr));
+    gl.useProgram(pr);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+    gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+    this.u = Object.fromEntries(['ev', 'con', 'tone', 'wb', 'col', 'orig'].map((n) => [n, gl.getUniformLocation(pr, n)]));
+    gl.uniform1i(gl.getUniformLocation(pr, 'img'), 0);
+    this.tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, this.tex);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    this.maxTex = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+  }
+  setImage(src) {
+    const gl = this.gl;
+    gl.bindTexture(gl.TEXTURE_2D, this.tex);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
+    this.canvas.width = src.width; this.canvas.height = src.height;
+    gl.viewport(0, 0, src.width, src.height);
+  }
+  draw(s, orig = false) {
+    const gl = this.gl;
+    const v = (k) => (s[k] || 0) / 100;
+    gl.uniform1f(this.u.ev, s.exposure || 0);
+    gl.uniform1f(this.u.con, v('contrast') * 0.6);
+    gl.uniform4f(this.u.tone, v('highlights'), v('shadows'), v('whites'), v('blacks'));
+    gl.uniform2f(this.u.wb, v('temp'), v('tint'));
+    gl.uniform2f(this.u.col, v('vibrance'), v('saturation'));
+    gl.uniform1i(this.u.orig, orig ? 1 : 0);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+  }
+  dispose() { const ext = this.gl.getExtension('WEBGL_lose_context'); if (ext) ext.loseContext(); }
+}
+
+/* ---------- UI helpers ---------- */
+const el = (tag, props = {}, kids = []) => { const e = Object.assign(document.createElement(tag), props); e.append(...kids); return e; };
+const svg = (inner, cls = 'i') => { const t = document.createElement('template');
+  t.innerHTML = `<svg class="${cls}" viewBox="0 0 24 24" aria-hidden="true">${inner}</svg>`; return t.content.firstChild; };
+let toastTimer;
+function toast(msg, ms = 2600) {
+  const t = $('#toast'); t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, ms);
+}
+let lastFocus = null;
+function openSheet(kind, build) {
+  lastFocus = document.activeElement;
+  const sh = $('#sheet'); sh.replaceChildren(); sh.className = 'sheet ' + kind; build(sh);
+  $('#scrim').hidden = false; sh.hidden = false;
+  const first = sh.querySelector('button'); if (first) first.focus({ preventScroll: true });
+}
+function closeSheet() {
+  const sh = $('#sheet');
+  sh.querySelectorAll('img[data-url]').forEach((i) => URL.revokeObjectURL(i.dataset.url));
+  sh.hidden = true; $('#scrim').hidden = true; sh.replaceChildren();
+  if (lastFocus && document.contains(lastFocus)) lastFocus.focus({ preventScroll: true });
+}
+$('#scrim').addEventListener('click', closeSheet);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#sheet').hidden) closeSheet(); });
+const sign = (v) => (v > 0 ? '+' : v < 0 ? '−' : '');
+const fmtValue = (key, v) => key === 'exposure' ? sign(v) + decimal(v, 2) + ' EV' : key === 'angle' ? sign(v) + decimal(v, 1) + '°' : key === 'amount' ? decimal(v, 0) + ' %' : sign(v) + decimal(v, 0);
+function once(key) { try { if (localStorage.getItem(key)) return false; localStorage.setItem(key, '1'); return true; } catch (e) { return false; } }
+
+/* ---------- sample photo (offered when the library is empty; never saved) ---------- */
+async function makeSample() {
+  const c = document.createElement('canvas'); c.width = 1600; c.height = 1067;
+  const g = c.getContext('2d');
+  const sky = g.createLinearGradient(0, 0, 0, 760);
+  sky.addColorStop(0, '#2d3e5e'); sky.addColorStop(.55, '#a7787a'); sky.addColorStop(1, '#e7a865');
+  g.fillStyle = sky; g.fillRect(0, 0, 1600, 1067);
+  g.fillStyle = '#ffe2ae'; g.beginPath(); g.arc(1080, 700, 70, 0, Math.PI * 2); g.fill();
+  const hill = (y, amp, col, seed) => {
+    g.fillStyle = col; g.beginPath(); g.moveTo(0, 1067);
+    for (let x = 0; x <= 1600; x += 20) g.lineTo(x, y + Math.sin(x / 210 + seed) * amp + Math.sin(x / 67 + seed * 2) * amp * .25);
+    g.lineTo(1600, 1067); g.closePath(); g.fill();
+  };
+  hill(720, 38, '#5b4a57', 1.3); hill(820, 30, '#3b3540', 2.7); hill(930, 22, '#211f26', 4.1);
+  g.fillStyle = 'rgba(0,0,0,.38)'; g.fillRect(0, 0, 1600, 1067); // shot one stop under, on purpose
+  const original = await toBlob(c, 'image/jpeg', .9);
+  const thumb = await toBlob(rasterize(c, 480, 320), 'image/jpeg', .8);
+  return { id: 'sample', fileName: 'ejemplo-atardecer.jpg', mime: 'image/jpeg', width: 1600, height: 1067,
+    addedAt: now(), updatedAt: now(), hasEdit: false, thumb, original, sample: true };
+}
+
+/* ---------- library ---------- */
+let thumbUrls = [];
+let samplePhoto = null;
+async function renderLibrary() {
+  thumbUrls.forEach((u) => URL.revokeObjectURL(u)); thumbUrls = [];
+  const grid = $('#grid'); grid.replaceChildren();
+  const photos = (await store.all('photos')).sort((a, b) => b.addedAt.localeCompare(a.addedAt));
+  const notice = $('#libNotice');
+  if (store.isVolatile) {
+    notice.textContent = 'Este navegador no deja guardar datos aquí: tus fotos y ediciones se perderán al cerrar.';
+    notice.className = 'footnote warn';
+  } else {
+    notice.textContent = photos.length
+      ? `${photos.length} ${photos.length === 1 ? 'foto' : 'fotos'} · solo en este iPhone`
+      : 'JPG y HEIC · solo en este iPhone';
+  }
+  if (!photos.length) {
+    $('#selectBtn').hidden = true; if (state.selecting) setSelecting(false);
+    const tryBtn = el('button', { className: 'btn-text', type: 'button', textContent: 'Probar con la foto de ejemplo' });
+    tryBtn.addEventListener('click', async () => { if (!samplePhoto) samplePhoto = await makeSample(); openEditor(samplePhoto); });
+    grid.append(el('div', { className: 'empty' }, [
+      svg('<rect x="4" y="9" width="40" height="32" rx="5"/><path d="M4 33l11-10 9 8 7-6 13 11"/><circle cx="33" cy="18" r="3.5"/><path d="M12 9V7a3 3 0 0 1 3-3h30a3 3 0 0 1 3 3v24a3 3 0 0 1-3 3h-1"/>', 'i art'),
+      el('h2', { textContent: 'Empieza con una foto' }),
+      el('p', { textContent: 'Elige JPG o HEIC de tu carrete. Se editan aquí, sin cuenta y sin nube.' }),
+      el('label', { className: 'btn-fill', htmlFor: 'pick', textContent: 'Añadir fotos', tabIndex: 0, role: 'button' }),
+      tryBtn,
+    ]));
+    grid.querySelector('.art').setAttribute('viewBox', '0 0 52 48');
+    return;
+  }
+  for (const p of photos) grid.append(tileFor(p));
+  $('#selectBtn').hidden = false;
+  grid.classList.toggle('selecting', state.selecting);
+}
+function tileFor(p) {
+  const url = URL.createObjectURL(p.thumb); thumbUrls.push(url);
+  const b = el('button', { className: 'tile', type: 'button',
+    ariaLabel: `${p.fileName}, ${megapixels(p.width, p.height)}${p.hasEdit ? ', editada' : ''}` }, [
+    el('img', { src: url, alt: '' }),
+    el('span', { className: 'fmt', textContent: /hei/i.test(p.mime) ? 'HEIC' : 'JPG' }),
+  ]);
+  if (p.hasEdit) b.append(svg(ICON_EDITED, 'i edited'));
+  b.append(el('span', { className: 'check', ariaHidden: 'true' }));
+  b.addEventListener('click', () => {
+    if (!state.selecting) { openEditor(p); return; }
+    if (state.selected.has(p.id)) state.selected.delete(p.id); else state.selected.add(p.id);
+    b.classList.toggle('sel', state.selected.has(p.id)); b.setAttribute('aria-pressed', state.selected.has(p.id) ? 'true' : 'false');
+    syncSelectBar();
+  });
+  return b;
+}
+// labels that act as buttons also respond to Enter and Space
+document.addEventListener('keydown', (e) => {
+  const t = e.target;
+  if ((e.key === 'Enter' || e.key === ' ') && t instanceof HTMLLabelElement && t.htmlFor) { e.preventDefault(); document.getElementById(t.htmlFor).click(); }
+});
+$('#pick').addEventListener('change', async (e) => {
+  const files = [...e.target.files]; e.target.value = '';
+  if (!files.length) return;
+  const failed = [];
+  for (let i = 0; i < files.length; i++) {
+    toast(files.length === 1 ? 'Añadiendo…' : `Añadiendo ${i + 1} de ${files.length}…`, 60000);
+    const f = files[i];
+    if (!isAccepted(f)) { failed.push(f.name); continue; }
+    try {
+      const { img, done } = await decode(f);
+      const w = img.naturalWidth, h = img.naturalHeight;
+      const [tw, th] = fit(w, h, 480, Infinity);
+      const thumb = await toBlob(rasterize(img, tw, th), 'image/jpeg', .8);
+      done();
+      const mime = f.type || (/\.hei[cf]$/i.test(f.name) ? 'image/heic' : 'image/jpeg');
+      await store.put('photos', { id: uid(), fileName: f.name || 'foto.jpg', mime, width: w, height: h,
+        addedAt: now(), updatedAt: now(), hasEdit: false, thumb, original: new Blob([f], { type: mime }) });
+    } catch (err) { failed.push(f.name); }
+  }
+  toast(failed.length ? `No se pudo abrir: ${failed.join(', ')}. Por ahora solo JPG y HEIC.`
+    : (files.length === 1 ? 'Foto añadida' : `${files.length} fotos añadidas`), failed.length ? 5000 : 2000);
+  renderLibrary();
+});
+
+/* ---------- editor state ---------- */
+const state = { photo: null, settings: { ...DEFAULTS }, src: null, renderer: null, orig: false, frame: 0,
+  saveTimer: 0, changed: false, adj: 'exposure', history: [], hIndex: -1, autoPrev: null, mode: 'adjust', view: { k: 1 },
+  userPresets: [], selecting: false, selected: new Set(), clipboard: null };
+const canvas = $('#view');
+function ensureRenderer() {
+  if (!state.renderer) state.renderer = new Renderer(canvas);
+  return state.renderer;
+}
+canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); state.renderer = null; });
+canvas.addEventListener('webglcontextrestored', () => { if (state.src) { ensureRenderer().setImage(state.src); requestDraw(); } });
+function requestDraw() {
+  if (state.frame) return;
+  state.frame = requestAnimationFrame(() => {
+    state.frame = 0;
+    if (state.renderer && state.src) state.renderer.draw(effective(state.settings), state.orig);
+  });
+}
+
+/* settings <-> stored shape { light: {...}, color: {...} } */
+function toStored(s) {
+  const out = { light: {}, color: {}, crop: { ...s.crop }, preset: s.preset ? { ...s.preset } : null };
+  for (const d of SLIDERS) out[d.group][d.key] = s[d.key];
+  return out;
+}
+function fromStored(stored) {
+  const s = { ...DEFAULTS, crop: { ...DEFAULT_CROP }, preset: null };
+  if (!stored) return s;
+  const pr = stored.preset;
+  if (pr && typeof pr.id === 'string' && typeof pr.amount === 'number' && isFinite(pr.amount)) s.preset = { id: pr.id, amount: Math.min(200, Math.max(0, pr.amount)) };
+  for (const d of SLIDERS) {
+    const v = stored[d.group] && stored[d.group][d.key];
+    if (typeof v === 'number' && isFinite(v)) s[d.key] = Math.min(d.max, Math.max(d.min, v));
+  }
+  const c = stored.crop;
+  if (c && typeof c === 'object') {
+    const num = (v, a, b, dflt) => (typeof v === 'number' && isFinite(v) ? Math.min(b, Math.max(a, v)) : dflt);
+    s.crop = { cx: num(c.cx, -.5, .5, 0), cy: num(c.cy, -.5, .5, 0), w: num(c.w, .01, 1.5, 1), h: num(c.h, .01, 1.5, 1),
+      angle: num(c.angle, -45, 45, 0), rot: [0, 90, 180, 270].includes(c.rot) ? c.rot : 0, flip: !!c.flip,
+      aspect: typeof c.aspect === 'number' && c.aspect > 0 ? c.aspect : null };
+  }
+  return s;
+}
+const cropIsIdentity = (c) => c.rot === 0 && c.angle === 0 && !c.flip && c.cx === 0 && c.cy === 0 && c.w === 1 && c.h === 1;
+const isDefault = (s) => SLIDERS.every((d) => s[d.key] === 0) && cropIsIdentity(s.crop) && !(s.preset && presetById(s.preset.id));
+const same = (a, b) => SLIDERS.every((d) => a[d.key] === b[d.key]) && JSON.stringify(a.crop) === JSON.stringify(b.crop) && JSON.stringify(a.preset) === JSON.stringify(b.preset);
+
+/* ---------- adjustment row: Auto + one round button per adjustment ---------- */
+const RING_C = 2 * Math.PI * 24;
+function ringSvg() {
+  const t = document.createElement('template');
+  t.innerHTML = `<svg class="ring" viewBox="0 0 52 52" aria-hidden="true"><circle class="track" cx="26" cy="26" r="24"/><circle class="arc" cx="26" cy="26" r="24" stroke-dasharray="0 ${RING_C}" style="visibility:hidden"/></svg>`;
+  return t.content.firstChild;
+}
+const adjRow = $('#adjRow');
+const autoBtn = el('button', { className: 'adj auto', type: 'button', id: 'autoBtn', ariaLabel: 'Auto' });
+autoBtn.setAttribute('aria-pressed', 'false');
+autoBtn.append(ringSvg(), svg(AUTO_GLYPH));
+const group = el('div', { className: 'adj-group', role: 'radiogroup', ariaLabel: 'Ajustes' });
+for (const d of SLIDERS) {
+  const b = el('button', { className: 'adj', type: 'button', role: 'radio', id: 'adj-' + d.key });
+  b.dataset.key = d.key;
+  b.append(ringSvg(), svg(d.glyph));
+  b.addEventListener('click', () => selectAdj(d.key, true));
+  group.append(b);
+}
+adjRow.append(autoBtn, group);
+group.addEventListener('keydown', (e) => {
+  if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+  e.preventDefault();
+  const i = SLIDERS.findIndex((d) => d.key === state.adj);
+  const next = SLIDERS[Math.min(SLIDERS.length - 1, Math.max(0, i + (e.key === 'ArrowRight' ? 1 : -1)))];
+  selectAdj(next.key, true); document.getElementById('adj-' + next.key).focus();
+});
+function selectAdj(key, scroll) {
+  state.adj = key;
+  const d = BY_KEY[key];
+  for (const b of group.children) {
+    const on = b.dataset.key === key;
+    b.setAttribute('aria-checked', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1;
+  }
+  if (scroll) document.getElementById('adj-' + key).scrollIntoView({ inline: 'center', block: 'nearest', behavior: reduceMotion() ? 'auto' : 'smooth' });
+  syncControls();
+}
+// scrolling the row selects whichever adjustment ends up in the centre
+let rowScrollTimer = 0;
+adjRow.addEventListener('scroll', () => {
+  clearTimeout(rowScrollTimer);
+  rowScrollTimer = setTimeout(() => {
+    const r = adjRow.getBoundingClientRect(), cx = r.left + r.width / 2;
+    let best = null, bd = Infinity;
+    for (const b of group.children) { const br = b.getBoundingClientRect(); const dd = Math.abs(br.left + br.width / 2 - cx); if (dd < bd) { bd = dd; best = b; } }
+    if (best && best.dataset.key !== state.adj) selectAdj(best.dataset.key, false);
+  }, 140);
+}, { passive: true });
+
+/* ---------- the ruler: drag sideways to set the value, double tap to reset ----------
+   It drives the selected adjustment, or the straighten angle in crop mode. */
+const dial = () => (state.mode === 'crop' ? ANGLE : state.mode === 'presets' ? AMOUNT : BY_KEY[state.adj]);
+const dialValue = () => (state.mode === 'crop' ? state.settings.crop.angle
+  : state.mode === 'presets' ? (state.settings.preset ? state.settings.preset.amount : 100) : state.settings[state.adj]);
+const setDial = (v) => (state.mode === 'crop' ? setAngle(v) : state.mode === 'presets' ? setAmount(v) : setValue(state.adj, v));
+const ruler = $('#ruler'), rctx = ruler.getContext('2d');
+const css = (name) => getComputedStyle(document.documentElement).getPropertyValue('--' + name).trim();
+let colors = null;
+function sizeRuler() {
+  const dpr = Math.min(3, window.devicePixelRatio || 1), w = ruler.clientWidth, h = ruler.clientHeight;
+  if (!w) return;
+  if (ruler.width !== Math.round(w * dpr) || ruler.height !== Math.round(h * dpr)) { ruler.width = Math.round(w * dpr); ruler.height = Math.round(h * dpr); }
+  drawRuler();
+}
+function drawRuler() {
+  const d = dial();
+  if (!ruler.width || !ruler.clientWidth || !d) return;   // hidden editor: nothing to draw yet
+  if (!colors) colors = { tick: css('text-muted'), zero: css('text'), a: css('accent'), b: css('accent-2') };
+  const dpr = ruler.width / ruler.clientWidth, W = ruler.width, H = ruler.height, cx = W / 2;
+  const v = dialValue(), ppu = RULER_SPAN * dpr / (d.max - d.min), n = d.ticks || 80, tick = (d.max - d.min) / n;
+  rctx.clearRect(0, 0, W, H);
+  for (let i = 0; i <= n; i++) {
+    const t = d.min + i * tick, x = Math.round(cx + (t - v) * ppu);
+    if (x < -2 || x > W + 2) continue;
+    const zero = Math.abs(t - (d.ref || 0)) < 1e-9, major = d.majorStep ? Math.abs(Math.round(t / d.majorStep) * d.majorStep - t) < 1e-6 : i % 10 === 0;
+    const h = (zero ? 22 : major ? 15 : 8) * dpr;
+    rctx.fillStyle = zero ? colors.zero : colors.tick;
+    rctx.globalAlpha = zero || major ? 1 : .55;
+    rctx.fillRect(x - dpr * (zero ? 0.75 : 0.5), (H - h) / 2, dpr * (zero ? 1.5 : 1), h);
+  }
+  const top = (H - 30 * dpr) / 2, grad = rctx.createLinearGradient(0, top, 0, top + 30 * dpr);
+  grad.addColorStop(0, colors.a); grad.addColorStop(1, colors.b);
+  rctx.globalAlpha = 1; rctx.fillStyle = grad;
+  rctx.shadowColor = colors.a; rctx.shadowBlur = 8 * dpr;
+  rctx.fillRect(cx - dpr, top, 2 * dpr, 30 * dpr);
+  rctx.shadowBlur = 0;
+}
+if ('ResizeObserver' in window) new ResizeObserver(sizeRuler).observe(ruler); else window.addEventListener('resize', sizeRuler);
+let drag = null, lastTap = 0;
+ruler.addEventListener('pointerdown', (e) => {
+  ruler.setPointerCapture(e.pointerId);
+  drag = { x: e.clientX, v: dialValue(), moved: 0 };
+});
+ruler.addEventListener('pointermove', (e) => {
+  if (!drag) return;
+  const d = dial(), ppu = RULER_SPAN / (d.max - d.min), dx = e.clientX - drag.x;
+  drag.moved = Math.max(drag.moved, Math.abs(dx));
+  let v = Math.round((drag.v - dx / ppu) / d.step) * d.step;
+  v = Math.min(d.max, Math.max(d.min, v));
+  if (Math.abs(v - (d.ref || 0)) * ppu < 4) v = d.ref || 0;   // a light detent at zero (or 100 % for Cantidad)
+  v = Number(v.toFixed(2));
+  if (v !== dialValue()) setDial(v);
+});
+function endDrag() {
+  if (!drag) return;
+  const moved = drag.moved; drag = null;
+  if (moved < 6) {
+    const t = performance.now();
+    if (t - lastTap < 320) { setDial(dial().ref || 0); lastTap = 0; } else lastTap = t;
+  }
+  commit();
+}
+ruler.addEventListener('pointerup', endDrag);
+ruler.addEventListener('pointercancel', endDrag);
+ruler.addEventListener('keydown', (e) => {
+  const d = dial(), v = dialValue();
+  const big = d.step * (e.shiftKey ? 20 : 1) * (e.key.startsWith('Page') ? 10 : 1);
+  let n = null;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'PageUp') n = v + big;
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown' || e.key === 'PageDown') n = v - big;
+  else if (e.key === 'Home') n = d.min; else if (e.key === 'End') n = d.max;
+  else if (e.key === 'Backspace' || e.key === 'Delete' || e.key === '0') n = d.ref || 0;
+  if (n === null) return;
+  e.preventDefault();
+  setDial(Number(Math.min(d.max, Math.max(d.min, n)).toFixed(2)));
+});
+ruler.addEventListener('keyup', (e) => { if (/Arrow|Page|Home|End|Backspace|Delete|^0$/.test(e.key)) commit(); });
+
+function syncControls() {
+  const d = dial(), v = dialValue();
+  $('#adjName').textContent = d.label;
+  $('#scale').className = 'scale ' + ((state.mode === 'adjust' && d.scale) || 'none');
+  ruler.setAttribute('aria-valuemin', d.min); ruler.setAttribute('aria-valuemax', d.max);
+  syncChips();
+  const val = $('#adjValue');
+  const noPreset = state.mode === 'presets' && !(state.settings.preset && presetById(state.settings.preset.id));
+  ruler.style.visibility = noPreset ? 'hidden' : 'visible';
+  if (noPreset) $('#adjName').textContent = 'Elige un preset';
+  else if (state.mode === 'presets') $('#adjName').textContent = 'Cantidad · ' + presetById(state.settings.preset.id).name;
+  val.textContent = noPreset ? '' : v === 0 && !d.ref ? '0' : fmtValue(d.key, v);
+  val.classList.toggle('zero', v === (d.ref || 0));
+  ruler.setAttribute('aria-valuenow', v); ruler.setAttribute('aria-valuetext', fmtValue(d.key, v));
+  for (const b of group.children) {
+    const dd = BY_KEY[b.dataset.key], bv = state.settings[dd.key];
+    const f = bv === 0 ? 0 : Math.abs(bv) / (bv > 0 ? dd.max : -dd.min);
+    const arc = b.querySelector('.arc');
+    arc.setAttribute('stroke-dasharray', `${(f * RING_C).toFixed(1)} ${RING_C}`);
+    arc.setAttribute('transform', bv < 0 ? 'translate(0 52) scale(1 -1)' : '');
+    arc.style.visibility = f === 0 ? 'hidden' : 'visible';
+    b.setAttribute('aria-label', `${dd.label}, ${fmtValue(dd.key, bv)}`);
+  }
+  autoBtn.setAttribute('aria-pressed', state.autoPrev ? 'true' : 'false');
+  $('#undoBtn').disabled = state.hIndex <= 0;
+  $('#redoBtn').disabled = state.hIndex >= state.history.length - 1;
+  drawRuler();
+}
+
+/* ---------- edits: change, save, history ---------- */
+async function save() {
+  clearTimeout(state.saveTimer); state.saveTimer = 0;
+  const p = state.photo;
+  if (!p || p.sample || !state.changed) return;
+  await store.put('edits', { photoId: p.id, settings: toStored(state.settings), updatedAt: now() });
+  p.hasEdit = !isDefault(state.settings); p.updatedAt = now();
+  await store.put('photos', p);
+}
+function scheduleSave() { state.changed = true; clearTimeout(state.saveTimer); state.saveTimer = setTimeout(save, 400); }
+function setValue(key, v) {
+  state.settings[key] = v;
+  if (state.autoPrev) state.autoPrev = null;   // a manual change keeps Auto's values but ends the toggle
+  syncControls(); requestDraw(); scheduleSave();
+}
+function resetHistory() { state.history = [clone(state.settings)]; state.hIndex = 0; }
+function commit() {
+  const last = state.history[state.hIndex];
+  if (last && same(last, state.settings)) { syncControls(); return; }
+  state.history = state.history.slice(0, state.hIndex + 1);
+  state.history.push(clone(state.settings));
+  if (state.history.length > HISTORY_MAX) state.history.shift();
+  state.hIndex = state.history.length - 1;
+  syncControls();
+}
+function restore(snapshot) {
+  state.settings = clone(snapshot); state.autoPrev = null;
+  layout(); syncControls(); requestDraw(); scheduleSave();
+}
+$('#undoBtn').addEventListener('click', () => { if (state.hIndex > 0) { state.hIndex--; restore(state.history[state.hIndex]); } });
+$('#redoBtn').addEventListener('click', () => { if (state.hIndex < state.history.length - 1) { state.hIndex++; restore(state.history[state.hIndex]); } });
+document.addEventListener('keydown', (e) => {
+  if ($('#editor').hidden || !(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'z') return;
+  e.preventDefault(); (e.shiftKey ? $('#redoBtn') : $('#undoBtn')).click();
+});
+
+/* Auto: our own analysis of the preview. Exposure to middle grey, then whites,
+   blacks, highlights and shadows from the luminance spread. Tap again to undo it. */
+function analyse(src) {
+  const [w, h] = fit(src.width, src.height, 160, Infinity);
+  const d = rasterize(src, w, h).getContext('2d').getImageData(0, 0, w, h).data;
+  const lin = (c) => { c /= 255; return c <= .04045 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4); };
+  const ys = new Float32Array(w * h);
+  let logSum = 0;
+  for (let i = 0, j = 0; i < d.length; i += 4, j++) {
+    const y = .2126 * lin(d[i]) + .7152 * lin(d[i + 1]) + .0722 * lin(d[i + 2]);
+    ys[j] = y; logSum += Math.log(y + 1e-4);
+  }
+  return { ys, geoMean: Math.exp(logSum / ys.length) };
+}
+function autoSettings(src) {
+  const { ys, geoMean } = analyse(src);
+  const round = (v, step) => Math.round(v / step) * step;
+  const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+  const ev = clamp(round(Math.log2(.18 / geoMean) * .8, .05), -2, 2);
+  const k = Math.pow(2, ev);
+  const ps = Array.from(ys, (y) => Math.pow(y * k, 1 / 2.2)).sort((a, b) => a - b);
+  const pct = (f) => ps[Math.min(ps.length - 1, Math.floor(f * ps.length))];
+  const over = ps.filter((p) => p > 1).length / ps.length;
+  const deep = ps.filter((p) => p < .15).length / ps.length;
+  return {
+    ...DEFAULTS,
+    exposure: Number(ev.toFixed(2)),
+    contrast: 10,
+    highlights: over > .005 ? -Math.round(clamp(over * 600, 15, 70)) : 0,
+    shadows: Math.round(clamp(deep * 120, 0, 45)),
+    whites: Math.round(clamp((.97 - Math.min(pct(.995), 1.2)) * 250, -40, 50)),
+    blacks: Math.round(clamp((.025 - pct(.005)) * 300, -35, 25)),
+    vibrance: 12,
+    temp: state.settings.temp, tint: state.settings.tint, saturation: state.settings.saturation,
+    crop: { ...state.settings.crop }, preset: state.settings.preset ? { ...state.settings.preset } : null,
+  };
+}
+autoBtn.addEventListener('click', () => {
+  if (!state.src) return;
+  let keep = null;
+  if (state.autoPrev) {
+    state.settings = clone(state.autoPrev);
+  } else {
+    keep = clone(state.settings);
+    try { state.settings = autoSettings(state.src); } catch (e) { toast('Auto no pudo analizar esta foto.'); return; }
+  }
+  state.autoPrev = null; commit(); state.autoPrev = keep;
+  syncControls(); requestDraw(); scheduleSave();
+});
+
+/* ---------- crop: geometry ----------
+   Screen pipeline for the canvas (the adjusted, un-oriented preview):
+   flip -> rotate by rot -> straighten by angle (CSS: rotate(rot + angle) scaleX(flip)).
+   The crop is an axis-aligned rectangle in that rotated space, centred on the image centre,
+   and must stay inside the rotated image. */
+const rad = (deg) => deg * Math.PI / 180;
+const oriented = (w, h, rot) => (rot % 180 ? [h, w] : [w, h]);
+function cropPx(c = state.settings.crop) {
+  const [W, H] = oriented(state.src.width, state.src.height, c.rot);
+  return { cx: c.cx * W, cy: c.cy * H, w: c.w * W, h: c.h * H, W, H };
+}
+function toNorm(r, W, H) { return { cx: r.cx / W, cy: r.cy / H, w: r.w / W, h: r.h / H }; }
+function insideImage(r, W, H, angle, minSize = 0) {
+  if (r.w < minSize - 1e-6 || r.h < minSize - 1e-6) return false;
+  const cs = Math.cos(rad(angle)), sn = Math.sin(rad(angle)), hw = W / 2 + .5, hh = H / 2 + .5;
+  for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
+    const x = r.cx + sx * r.w / 2, y = r.cy + sy * r.h / 2;
+    if (Math.abs(x * cs + y * sn) > hw || Math.abs(-x * sn + y * cs) > hh) return false;
+  }
+  return true;
+}
+// largest rectangle of ratio a (w / h) centred in the rotated image
+function maxCentred(a, W, H, angle) {
+  const cs = Math.abs(Math.cos(rad(angle))), sn = Math.abs(Math.sin(rad(angle)));
+  const h = Math.min(W / (a * cs + sn), H / (a * sn + cs)) * .9999;
+  return { cx: 0, cy: 0, w: a * h, h };
+}
+const lerpRect = (a, b, t) => ({ cx: a.cx + (b.cx - a.cx) * t, cy: a.cy + (b.cy - a.cy) * t, w: a.w + (b.w - a.w) * t, h: a.h + (b.h - a.h) * t });
+// from a valid rectangle towards a wanted one, as far as it stays valid
+function furthest(from, to, ok) {
+  if (ok(to)) return to;
+  let lo = 0, hi = 1;
+  for (let i = 0; i < 20; i++) { const m = (lo + hi) / 2; if (ok(lerpRect(from, to, m))) lo = m; else hi = m; }
+  return lerpRect(from, to, lo);
+}
+function setCrop(c, { commitNow = false } = {}) {
+  state.settings.crop = c;
+  layout(); syncControls(); scheduleSave();
+  if (commitNow) commit();
+}
+function setAngle(v) {
+  const c = { ...state.settings.crop, angle: v };
+  const p = cropPx(c), r = { cx: p.cx, cy: p.cy, w: p.w, h: p.h };
+  let out = r;
+  if (!insideImage(r, p.W, p.H, v)) {
+    const base = maxCentred(c.aspect || r.w / r.h, p.W, p.H, v);
+    out = furthest(base, r, (q) => insideImage(q, p.W, p.H, v));
+  }
+  setCrop({ ...c, ...toNorm(out, p.W, p.H) });
+}
+
+/* ---------- crop: what is on screen ---------- */
+const stage = $('#stage'), clip = $('#clip'), frame = $('#cropFrame');
+function layout() {
+  if (!state.src) return;
+  const sw = stage.clientWidth, sh = stage.clientHeight;
+  if (!sw || !sh) return;
+  const c = state.settings.crop, p = cropPx(), srcW = state.src.width, srcH = state.src.height, cropMode = state.mode === 'crop';
+  let k, box, cX, cY;
+  if (cropMode) {
+    const m = 28;
+    k = Math.min((sw - 2 * m) / p.W, (sh - 2 * m) / p.H);
+    box = { l: 0, t: 0, w: sw, h: sh }; cX = sw / 2; cY = sh / 2;
+  } else {
+    k = Math.min(sw / p.w, sh / p.h);
+    box = { w: p.w * k, h: p.h * k }; box.l = (sw - box.w) / 2; box.t = (sh - box.h) / 2;
+    cX = box.w / 2 - p.cx * k; cY = box.h / 2 - p.cy * k;
+  }
+  Object.assign(clip.style, { left: box.l + 'px', top: box.t + 'px', width: box.w + 'px', height: box.h + 'px' });
+  clip.classList.toggle('open', cropMode);
+  Object.assign(canvas.style, { width: srcW * k + 'px', height: srcH * k + 'px', left: cX - srcW * k / 2 + 'px', top: cY - srcH * k / 2 + 'px',
+    transform: `rotate(${c.rot + c.angle}deg) scaleX(${c.flip ? -1 : 1})` });
+  state.view = { k };
+  frame.hidden = !cropMode;
+  if (cropMode) Object.assign(frame.style, { left: sw / 2 + (p.cx - p.w / 2) * k + 'px', top: sh / 2 + (p.cy - p.h / 2) * k + 'px',
+    width: p.w * k + 'px', height: p.h * k + 'px' });
+}
+if ('ResizeObserver' in window) new ResizeObserver(() => layout()).observe(stage); else window.addEventListener('resize', layout);
+
+/* ---------- crop: the frame (move, resize from corners and edges) ---------- */
+let cdrag = null;
+function resized(st, h, dx, dy, a) {
+  let l = st.cx - st.w / 2, r = st.cx + st.w / 2, t = st.cy - st.h / 2, b = st.cy + st.h / 2;
+  if (h === 'move') return { cx: st.cx + dx, cy: st.cy + dy, w: st.w, h: st.h };
+  if (h.includes('w')) l += dx; if (h.includes('e')) r += dx;
+  if (h.includes('n')) t += dy; if (h.includes('s')) b += dy;
+  let w = Math.max(1, r - l), hh = Math.max(1, b - t);
+  if (a) {
+    if (h === 'n' || h === 's') w = hh * a;
+    else if (h === 'e' || h === 'w') hh = w / a;
+    else if (w / hh > a) w = hh * a; else hh = w / a;
+    // keep the opposite side or corner where it was; edges stay centred on the other axis
+    if (h.includes('w')) l = r - w; else if (h.includes('e')) r = l + w; else { l = st.cx - w / 2; r = l + w; }
+    if (h.includes('n')) t = b - hh; else if (h.includes('s')) b = t + hh; else { t = st.cy - hh / 2; b = t + hh; }
+  } else { w = r - l; hh = b - t; }
+  return { cx: (l + r) / 2, cy: (t + b) / 2, w, h: hh };
+}
+frame.addEventListener('pointerdown', (e) => {
+  if (!state.src) return;
+  frame.setPointerCapture(e.pointerId);
+  const p = cropPx();
+  cdrag = { h: e.target.dataset.h || 'move', x: e.clientX, y: e.clientY, st: { cx: p.cx, cy: p.cy, w: p.w, h: p.h } };
+  frame.classList.add('dragging'); e.preventDefault(); e.stopPropagation();
+});
+frame.addEventListener('pointermove', (e) => {
+  if (!cdrag) return;
+  const c = state.settings.crop, p = cropPx(), k = state.view.k;
+  const dx = (e.clientX - cdrag.x) / k, dy = (e.clientY - cdrag.y) / k, min = 56 / k;
+  const ok = (q) => insideImage(q, p.W, p.H, c.angle, min);
+  let r;
+  if (cdrag.h === 'move') {          // slide along each axis separately so the frame can glide along an edge
+    r = furthest(cdrag.st, { ...cdrag.st, cx: cdrag.st.cx + dx }, ok);
+    r = furthest(r, { ...r, cy: cdrag.st.cy + dy }, ok);
+  } else r = furthest(cdrag.st, resized(cdrag.st, cdrag.h, dx, dy, c.aspect), ok);
+  setCrop({ ...c, ...toNorm(r, p.W, p.H) });
+});
+function endCropDrag() { if (!cdrag) return; cdrag = null; frame.classList.remove('dragging'); commit(); }
+frame.addEventListener('pointerup', endCropDrag);
+frame.addEventListener('pointercancel', endCropDrag);
+
+/* ---------- crop: rotate, flip, proportion, reset ---------- */
+$('#rotBtn').addEventListener('click', () => {
+  if (!state.src) return;
+  const c = state.settings.crop, p = cropPx();
+  const rot = (c.rot + 270) % 360, [W, H] = oriented(state.src.width, state.src.height, rot);
+  const r = { cx: p.cy, cy: -p.cx, w: p.h, h: p.w };          // the frame turns with the photo
+  setCrop({ ...c, rot, aspect: c.aspect ? 1 / c.aspect : null, ...toNorm(r, W, H) }, { commitNow: true });
+});
+$('#flipBtn').addEventListener('click', () => {
+  if (!state.src) return;
+  const c = state.settings.crop;
+  setCrop({ ...c, rot: (360 - c.rot) % 360, flip: !c.flip, angle: c.angle ? -c.angle : 0, cx: c.cx ? -c.cx : 0 }, { commitNow: true });
+});
+$('#cropReset').addEventListener('click', () => { if (state.src) setCrop({ ...DEFAULT_CROP }, { commitNow: true }); });
+const chips = $('#chips');
+for (const [label, ratio] of RATIOS) {
+  const b = el('button', { className: 'chip', type: 'button', textContent: label });
+  b.setAttribute('aria-pressed', 'false');
+  b.addEventListener('click', () => {
+    if (!state.src) return;
+    const c = state.settings.crop, p = cropPx();
+    const a = ratio === 'orig' ? p.W / p.H : ratio;
+    if (!a) { setCrop({ ...c, aspect: null }, { commitNow: true }); return; }
+    setCrop({ ...c, aspect: a, ...toNorm(maxCentred(a, p.W, p.H, c.angle), p.W, p.H) }, { commitNow: true });
+  });
+  b.dataset.ratio = ratio === null ? '' : String(ratio);
+  chips.append(b);
+}
+function syncChips() {
+  if (!state.src) return;
+  const c = state.settings.crop, p = cropPx(), orig = p.W / p.H;
+  for (const b of chips.children) {
+    const r = b.dataset.ratio;
+    const on = r === '' ? !c.aspect : r === 'orig' ? !!c.aspect && Math.abs(c.aspect - orig) < 1e-3
+      : !!c.aspect && Math.abs(c.aspect - Number(r)) < 1e-3;
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+}
+
+/* ---------- presets: row of previews, Cantidad, my presets ---------- */
+const presetRow = $('#presetRow');
+function setAmount(v) {
+  if (!state.settings.preset) return;
+  state.settings.preset = { ...state.settings.preset, amount: v };
+  state.autoPrev = null; syncControls(); requestDraw(); scheduleSave();
+}
+function choosePreset(id) {
+  const cur = state.settings.preset;
+  state.settings.preset = id ? { id, amount: cur && cur.id === id ? cur.amount : 100 } : null;
+  state.autoPrev = null; commit(); requestDraw(); scheduleSave(); syncPresetTiles();
+}
+function presetTile(id, name, extra = {}) {
+  const b = el('button', { className: 'ptile', type: 'button' }, [el('canvas', { width: 128, height: 128 }), el('span', { textContent: name })]);
+  b.dataset.id = id || '';
+  b.setAttribute('aria-pressed', 'false');
+  b.setAttribute('aria-label', id ? `Preset ${name}` : 'Sin preset');
+  let pressTimer = 0, longPressed = false;
+  if (extra.mine) {
+    const start = () => { longPressed = false; pressTimer = setTimeout(() => { longPressed = true; askDeletePreset(id, name); }, 550); };
+    const stop = () => clearTimeout(pressTimer);
+    b.addEventListener('pointerdown', start); ['pointerup', 'pointerleave', 'pointercancel'].forEach((t) => b.addEventListener(t, stop));
+    b.addEventListener('contextmenu', (e) => { e.preventDefault(); stop(); longPressed = true; askDeletePreset(id, name); });
+  }
+  b.addEventListener('click', () => { if (longPressed) { longPressed = false; return; } choosePreset(id); });
+  return b;
+}
+function buildPresetRow() {
+  presetRow.replaceChildren(presetTile(null, 'Ninguno'));
+  for (const pr of BUILTIN_PRESETS) presetRow.append(presetTile(pr.id, pr.name));
+  presetRow.append(el('span', { className: 'vsep', ariaHidden: 'true' }));
+  for (const pr of state.userPresets) presetRow.append(presetTile(pr.id, pr.name, { mine: true }));
+  const add = el('button', { className: 'ptile add', type: 'button', ariaLabel: 'Guardar como preset' },
+    [el('div', { className: 'addbox' }, [svg('<path d="M12 5v14M5 12h14"/>')]), el('span', { textContent: 'Guardar' })]);
+  add.addEventListener('click', openSavePreset);
+  presetRow.append(add);
+  syncPresetTiles(); renderPresetPreviews();
+}
+function syncPresetTiles() {
+  const cur = state.settings.preset && presetById(state.settings.preset.id) ? state.settings.preset.id : '';
+  for (const b of presetRow.querySelectorAll('.ptile[data-id]')) b.setAttribute('aria-pressed', b.dataset.id === cur ? 'true' : 'false');
+}
+// each preview = the photo's own adjustments with that preset at 100 %, centre square
+function renderPresetPreviews() {
+  if (!state.src) return;
+  const S = 128, side = Math.min(state.src.width, state.src.height);
+  const sq = document.createElement('canvas'); sq.width = sq.height = S;
+  sq.getContext('2d').drawImage(state.src, (state.src.width - side) / 2, (state.src.height - side) / 2, side, side, 0, 0, S, S);
+  let r;
+  try { r = new Renderer(document.createElement('canvas'), true); } catch (e) { return; }
+  r.setImage(sq);
+  for (const b of presetRow.querySelectorAll('.ptile[data-id]')) {
+    const id = b.dataset.id;
+    r.draw(effective({ ...state.settings, preset: id ? { id, amount: 100 } : null }));
+    b.querySelector('canvas').getContext('2d').drawImage(r.canvas, 0, 0);
+  }
+  r.dispose();
+}
+function sheetNav(title, left, right) {
+  return el('div', { className: 'sheet-nav' }, [left || el('span'), el('h2', { textContent: title }), right || el('span')]);
+}
+function switchRow(id, label, hint, checked) {
+  const input = el('input', { className: 'switch', type: 'checkbox', id, checked });
+  input.setAttribute('role', 'switch');
+  return el('label', { className: 'switch-row', htmlFor: id }, [el('span', {}, [label, hint ? el('small', { textContent: hint }) : '']), input]);
+}
+function openSavePreset() {
+  const n = state.userPresets.length + 1;
+  openSheet('modal', (sh) => {
+    const save = el('button', { className: 'btn-text strong', type: 'button', textContent: 'Guardar' });
+    const cancel = el('button', { className: 'btn-text left', type: 'button', textContent: 'Cancelar', onclick: closeSheet });
+    const name = el('input', { id: 'presetName', type: 'text', value: `Mi preset ${n}`, maxLength: 24, autocomplete: 'off' });
+    sh.append(el('div', { className: 'grabber' }), sheetNav('Nuevo preset', cancel, save),
+      el('div', { className: 'field' }, [el('label', { htmlFor: 'presetName', textContent: 'Nombre' }), name]),
+      el('div', { className: 'list' }, [switchRow('incLight', 'Luz', 'Exposición, contraste, altas luces, sombras, blancos, negros', true),
+        switchRow('incColor', 'Color', 'Temperatura, matiz, intensidad, saturación', true)]),
+      el('p', { className: 'facts', textContent: 'Guarda los valores de esta foto, con el preset que tenga aplicado. El recorte no se incluye.' }));
+    save.addEventListener('click', async () => {
+      const groups = { light: $('#incLight').checked, color: $('#incColor').checked };
+      const eff = effective(state.settings), values = {};
+      for (const d of SLIDERS) if (groups[d.group] && eff[d.key] !== 0) values[d.key] = eff[d.key];
+      if (!Object.keys(values).length) { toast('No hay ajustes que guardar en esos grupos. Mueve alguno primero.', 4000); return; }
+      const rec = { id: 'u-' + uid(), name: name.value.trim() || `Mi preset ${n}`, values, createdAt: now(), builtIn: false };
+      await store.put('presets', rec);
+      state.userPresets.push(rec);
+      closeSheet(); buildPresetRow(); toast(`Preset «${rec.name}» guardado`);
+    });
+  });
+}
+function askDeletePreset(id, name) {
+  openSheet('action', (sh) => {
+    sh.append(el('div', { className: 'group' }, [
+      el('p', { className: 'msg' }, [el('strong', { textContent: name }), 'Las fotos que lo usan vuelven a sus ajustes propios.']),
+      el('button', { className: 'as-btn danger', type: 'button', textContent: 'Borrar preset', onclick: async () => {
+        closeSheet();
+        await store.del('presets', id);
+        state.userPresets = state.userPresets.filter((x) => x.id !== id);
+        if (state.settings.preset && state.settings.preset.id === id) choosePreset(null);
+        buildPresetRow(); toast(`Preset «${name}» borrado`);
+      } })]),
+      el('div', { className: 'group' }, [el('button', { className: 'as-btn cancel', type: 'button', textContent: 'Cancelar', onclick: closeSheet })]));
+  });
+}
+
+/* ---------- copy and paste adjustments ---------- */
+const CLIP_KEY = 'lumora.clipboard';
+try { const c = JSON.parse(localStorage.getItem(CLIP_KEY) || 'null'); if (c && c.groups) state.clipboard = c; } catch (e) {}
+function copyFrom(s, groups) {
+  const clip = { groups, light: {}, color: {}, preset: null, crop: null };
+  for (const d of SLIDERS) if (groups[d.group]) clip[d.group][d.key] = s[d.key];
+  if (groups.preset) clip.preset = s.preset ? { ...s.preset } : null;
+  if (groups.crop) clip.crop = { ...s.crop };
+  return clip;
+}
+// pure: keep a pasted crop inside a photo of this size
+function fitCrop(c, srcW, srcH) {
+  const [W, H] = oriented(srcW, srcH, c.rot);
+  let r = { cx: c.cx * W, cy: c.cy * H, w: c.w * W, h: c.h * H };
+  if (c.aspect) {   // a locked proportion must survive a photo of another shape
+    const w = Math.min(r.w, r.h * c.aspect);
+    r = { cx: r.cx, cy: r.cy, w, h: w / c.aspect };
+  }
+  if (insideImage(r, W, H, c.angle)) return { ...c, ...toNorm(r, W, H) };
+  const base = maxCentred(c.aspect || r.w / r.h, W, H, c.angle);
+  return { ...c, ...toNorm(furthest(base, r, (q) => insideImage(q, W, H, c.angle)), W, H) };
+}
+function pasteInto(s, clip, w, h) {
+  const out = clone(s);
+  for (const d of SLIDERS) if (clip.groups[d.group] && typeof clip[d.group][d.key] === 'number') out[d.key] = clip[d.group][d.key];
+  if (clip.groups.preset) out.preset = clip.preset ? { ...clip.preset } : null;
+  if (clip.groups.crop && clip.crop) out.crop = fitCrop({ ...clip.crop }, w, h);
+  return out;
+}
+function openCopySheet() {
+  openSheet('modal', (sh) => {
+    const copy = el('button', { className: 'btn-fill block', type: 'button', textContent: 'Copiar ajustes' });
+    sh.append(el('div', { className: 'grabber' }),
+      sheetNav('Copiar ajustes', null, el('button', { className: 'btn-text', type: 'button', textContent: 'Cerrar', onclick: closeSheet })),
+      el('div', { className: 'list' }, [switchRow('cpLight', 'Luz', '', true), switchRow('cpColor', 'Color', '', true),
+        switchRow('cpPreset', 'Preset', '', true), switchRow('cpCrop', 'Recorte', 'Encuadre, enderezado, giro', false)]),
+      copy, el('p', { className: 'facts', textContent: 'Luego pégalos desde ••• en otra foto, o en varias a la vez desde la biblioteca con «Seleccionar».' }));
+    copy.addEventListener('click', () => {
+      const groups = { light: $('#cpLight').checked, color: $('#cpColor').checked, preset: $('#cpPreset').checked, crop: $('#cpCrop').checked };
+      if (!Object.values(groups).some(Boolean)) { toast('Elige al menos un grupo.'); return; }
+      state.clipboard = copyFrom(state.settings, groups);
+      try { localStorage.setItem(CLIP_KEY, JSON.stringify(state.clipboard)); } catch (e) {}
+      closeSheet(); toast('Ajustes copiados');
+    });
+  });
+}
+function pasteHere() {
+  if (!state.clipboard || !state.src) return;
+  state.settings = pasteInto(state.settings, state.clipboard, state.src.width, state.src.height);
+  state.autoPrev = null; commit(); layout(); syncControls(); requestDraw(); scheduleSave();
+  if (state.mode === 'presets') { syncPresetTiles(); renderPresetPreviews(); }
+  toast('Ajustes pegados');
+}
+// a photo that is not open: decode, render a new thumbnail, store
+async function thumbFor(photo, settings) {
+  const { img, done } = await decode(photo.original);
+  const [tw, th] = fit(img.naturalWidth, img.naturalHeight, 480, Infinity);
+  const small = rasterize(img, tw, th); done();
+  const off = document.createElement('canvas'); const r = new Renderer(off, true);
+  r.setImage(small); r.draw(effective(settings));
+  const outCanvas = cropIsIdentity(settings.crop) ? off : renderCropped(off, settings.crop);
+  const blob = await toBlob(outCanvas, 'image/jpeg', .8); r.dispose();
+  return blob;
+}
+async function pasteToPhotos(ids) {
+  const photos = (await store.all('photos')).filter((p) => ids.has(p.id));
+  let i = 0, failed = 0;
+  for (const p of photos) {
+    toast(`Pegando ${++i} de ${photos.length}…`, 60000);
+    try {
+      const edit = await store.get('edits', p.id);
+      const s = pasteInto(fromStored(edit && edit.settings), state.clipboard, p.width, p.height);
+      await store.put('edits', { photoId: p.id, settings: toStored(s), updatedAt: now() });
+      p.thumb = await thumbFor(p, s); p.hasEdit = !isDefault(s); p.updatedAt = now();
+      await store.put('photos', p);
+    } catch (e) { failed++; }
+  }
+  toast(failed ? `Pegado en ${photos.length - failed}; ${failed} no se pudieron procesar.` : (photos.length === 1 ? 'Ajustes pegados en 1 foto' : `Ajustes pegados en ${photos.length} fotos`), 3500);
+}
+
+/* ---------- library: select photos to paste onto ---------- */
+function setSelecting(on) {
+  state.selecting = on; state.selected.clear();
+  $('#selectBtn').textContent = on ? 'Cancelar' : 'Seleccionar';
+  $('#grid').classList.toggle('selecting', on);
+  $('#selectBar').hidden = !on;
+  for (const t of $('#grid').querySelectorAll('.tile')) t.classList.remove('sel');
+  syncSelectBar();
+}
+function syncSelectBar() {
+  const n = state.selected.size;
+  $('#selCount').textContent = !state.clipboard ? 'Primero copia ajustes desde una foto (••• › Copiar ajustes)'
+    : n ? (n === 1 ? '1 foto seleccionada' : `${n} fotos seleccionadas`) : 'Toca las fotos a las que quieres pegar los ajustes';
+  $('#pasteSelBtn').disabled = !state.clipboard || !n;
+}
+$('#selectBtn').addEventListener('click', () => setSelecting(!state.selecting));
+$('#pasteSelBtn').addEventListener('click', async () => {
+  const ids = new Set(state.selected), btn = $('#pasteSelBtn'); btn.disabled = true;
+  await pasteToPhotos(ids); setSelecting(false); renderLibrary();
+});
+
+/* ---------- modes: Ajustar / Presets / Recortar ---------- */
+function setMode(m) {
+  state.mode = m;
+  $('#mode-adjust').setAttribute('aria-selected', m === 'adjust' ? 'true' : 'false');
+  $('#mode-crop').setAttribute('aria-selected', m === 'crop' ? 'true' : 'false');
+  $('#mode-presets').setAttribute('aria-selected', m === 'presets' ? 'true' : 'false');
+  $('#adjRow').hidden = m !== 'adjust'; $('#cropRow').hidden = m !== 'crop'; $('#presetRow').hidden = m !== 'presets';
+  if (m === 'presets') buildPresetRow();
+  if (state.orig) showOrig(false);
+  layout(); syncControls();
+  if (m === 'adjust') { const b = document.getElementById('adj-' + state.adj); if (b) b.scrollIntoView({ inline: 'center', block: 'nearest' }); }
+}
+$('#mode-adjust').addEventListener('click', () => setMode('adjust'));
+$('#mode-crop').addEventListener('click', () => setMode('crop'));
+$('#mode-presets').addEventListener('click', () => setMode('presets'));
+
+/* ---------- output: apply crop, rotation, flip and straighten to a rendered canvas ---------- */
+function renderCropped(adj, c) {
+  const sW = adj.width, sH = adj.height, [W, H] = oriented(sW, sH, c.rot);
+  const w = Math.max(1, Math.round(c.w * W)), h = Math.max(1, Math.round(c.h * H));
+  const out = document.createElement('canvas'); out.width = w; out.height = h;
+  const g = out.getContext('2d'); g.imageSmoothingQuality = 'high';
+  g.translate(w / 2 - c.cx * W, h / 2 - c.cy * H);
+  g.rotate(rad(c.rot + c.angle)); g.scale(c.flip ? -1 : 1, 1);
+  g.drawImage(adj, -sW / 2, -sH / 2);
+  return out;
+}
+
+/* ---------- open / leave the editor ---------- */
+const showOrig = (on) => { state.orig = on; $('#origBadge').hidden = !on; requestDraw(); };
+stage.addEventListener('pointerdown', (e) => { if (state.mode !== 'crop' && (e.target === canvas || e.target === clip)) showOrig(true); });
+['pointerup', 'pointercancel', 'pointerleave'].forEach((t) => stage.addEventListener(t, () => state.orig && showOrig(false)));
+stage.addEventListener('contextmenu', (e) => e.preventDefault());
+
+async function openEditor(p) {
+  state.photo = p; state.changed = false; state.autoPrev = null;
+  const edit = p.sample ? null : await store.get('edits', p.id);
+  state.settings = fromStored(edit && edit.settings);
+  resetHistory(); state.mode = 'adjust'; state.src = null;
+  $('#library').hidden = true; $('#editor').hidden = false;
+  setMode('adjust'); sizeRuler(); selectAdj(state.adj, false);
+  document.getElementById('adj-' + state.adj).scrollIntoView({ inline: 'center', block: 'nearest' });
+  $('#loading').hidden = false; canvas.hidden = true;
+  try {
+    const { img, done } = await decode(p.original);
+    const [w, h] = fit(img.naturalWidth, img.naturalHeight, PREVIEW_EDGE, PREVIEW_PX);
+    state.src = rasterize(img, w, h); done();
+    ensureRenderer().setImage(state.src);
+    canvas.hidden = false; layout(); syncControls(); requestDraw();
+    if (once('revelado.hint.hold')) toast('Mantén pulsada la foto para ver el antes', 3500);
+  } catch (err) {
+    toast(err && err.message === 'webgl' ? 'Este navegador no puede mostrar la edición (falta WebGL2).' : 'Esta foto no se pudo abrir.', 5000);
+  } finally { $('#loading').hidden = true; }
+}
+async function refreshThumb() {
+  const p = state.photo;
+  if (!p || p.sample || !state.changed || !state.src) return;
+  try {
+    const [tw, th] = fit(state.src.width, state.src.height, 480, Infinity);
+    const small = rasterize(state.src, tw, th);
+    const off = document.createElement('canvas'); const r = new Renderer(off, true);
+    r.setImage(small); r.draw(effective(state.settings));
+    const c = state.settings.crop, outCanvas = cropIsIdentity(c) ? off : renderCropped(off, c);
+    p.thumb = await toBlob(outCanvas, 'image/jpeg', .8); r.dispose();
+    await store.put('photos', p);
+  } catch (e) { /* keep the old thumbnail */ }
+}
+async function leaveEditor() {
+  await save(); await refreshThumb();
+  state.photo = null; state.src = null;
+  $('#editor').hidden = true; $('#library').hidden = false;
+  renderLibrary();
+}
+$('#back').addEventListener('click', leaveEditor);
+const flush = () => { if (state.saveTimer) save(); };
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });
+window.addEventListener('pagehide', flush);
+
+/* ---------- more: photo info and remove (iOS action sheet) ---------- */
+$('#moreBtn').addEventListener('click', () => {
+  const p = state.photo; if (!p) return;
+  openSheet('action', (sh) => {
+    const msg = el('p', { className: 'msg' }, [el('strong', { textContent: p.fileName }),
+      `${p.width} × ${p.height} · ${megapixels(p.width, p.height)} · ${/hei/i.test(p.mime) ? 'HEIC' : 'JPG'}`]);
+    const top = el('div', { className: 'group' }, [msg,
+      el('button', { className: 'as-btn', type: 'button', textContent: 'Copiar ajustes', onclick: () => { closeSheet(); openCopySheet(); } })]);
+    if (state.clipboard) top.append(el('button', { className: 'as-btn', type: 'button', textContent: 'Pegar ajustes', onclick: () => { closeSheet(); pasteHere(); } }));
+    if (!p.sample) {
+      top.append(el('button', { className: 'as-btn danger', type: 'button', textContent: 'Quitar del editor', onclick: async () => {
+        closeSheet();
+        clearTimeout(state.saveTimer); state.saveTimer = 0; state.changed = false;
+        await store.removePhoto(p.id);
+        state.photo = null; state.src = null;
+        $('#editor').hidden = true; $('#library').hidden = false;
+        toast('Quitada de Lumora. La original sigue en tu carrete.'); renderLibrary();
+      } }));
+    }
+    sh.append(top, el('div', { className: 'group' }, [el('button', { className: 'as-btn cancel', type: 'button', textContent: 'Cancelar', onclick: closeSheet })]));
+  });
+});
+
+/* ---------- export (modal sheet) ---------- */
+const SIZES = [['Máximo', 0], ['4096', 4096], ['2048', 2048], ['1080', 1080]];
+const QUALITIES = [['Alta', .92], ['Media', .8], ['Ligera', .65]];
+function exportPrefs() {
+  try { const v = JSON.parse(localStorage.getItem('lumora.export') || 'null'); if (v) return v; } catch (e) {}
+  return { size: 0, quality: .92 };
+}
+function seg(options, current, onPick) {
+  const box = el('div', { className: 'seg', role: 'group' });
+  for (const [label, val] of options) {
+    const b = el('button', { type: 'button', textContent: label });
+    b.setAttribute('aria-pressed', val === current ? 'true' : 'false');
+    b.addEventListener('click', () => { for (const x of box.children) x.setAttribute('aria-pressed', 'false'); b.setAttribute('aria-pressed', 'true'); onPick(val); });
+    box.append(b);
+  }
+  return box;
+}
+$('#exportBtn').addEventListener('click', () => {
+  if (!state.photo) return;
+  const prefs = exportPrefs();
+  openSheet('modal', (sh) => {
+    const go = el('button', { className: 'btn-fill block', type: 'button', textContent: 'Exportar foto' });
+    sh.append(el('div', { className: 'grabber' }),
+      sheetNav('Exportar', null, el('button', { className: 'btn-text', type: 'button', textContent: 'Cerrar', onclick: closeSheet })),
+      el('p', { className: 'field-label', textContent: 'Tamaño (lado largo, en píxeles)' }), seg(SIZES, prefs.size, (v) => { prefs.size = v; }),
+      el('p', { className: 'field-label', textContent: 'Calidad JPG' }), seg(QUALITIES, prefs.quality, (v) => { prefs.quality = v; }),
+      go, el('p', { className: 'facts', textContent: 'Sin ubicación ni datos de la cámara.' }));
+    go.addEventListener('click', () => {
+      try { localStorage.setItem('lumora.export', JSON.stringify(prefs)); } catch (e) {}
+      closeSheet(); doExport(prefs.size, prefs.quality);
+    });
+  });
+});
+async function doExport(limit, quality) {
+  const p = state.photo; if (!p) return;
+  const btn = $('#exportBtn'); btn.disabled = true;
+  toast('Preparando la foto…', 60000);
+  try {
+    await save();
+    const { img, done } = await decode(p.original);
+    const off = document.createElement('canvas'); const r = new Renderer(off, true);
+    const [w, h] = fit(img.naturalWidth, img.naturalHeight, Math.min(r.maxTex, 8192), EXPORT_PX);
+    let src = rasterize(img, w, h); done();
+    r.setImage(src); r.draw(effective(state.settings));
+    const c = state.settings.crop;
+    let outCanvas = cropIsIdentity(c) ? off : renderCropped(off, c);
+    if (limit && Math.max(outCanvas.width, outCanvas.height) > limit) {
+      const [sw2, sh2] = fit(outCanvas.width, outCanvas.height, limit, Infinity);
+      const scaled = rasterize(outCanvas, sw2, sh2);
+      if (outCanvas !== off) outCanvas.width = outCanvas.height = 0;
+      outCanvas = scaled;
+    }
+    const blob = await toBlob(outCanvas, 'image/jpeg', quality);
+    const ow = outCanvas.width, oh = outCanvas.height;
+    r.dispose(); src.width = src.height = 0; src = null;
+    if (outCanvas !== off) { outCanvas.width = outCanvas.height = 0; } outCanvas = null;
+    $('#toast').hidden = true;
+    showExport(blob, baseName(p.fileName) + '-lumora.jpg', ow, oh, !limit && img.naturalWidth * img.naturalHeight > w * h);
+  } catch (err) {
+    toast('No se pudo exportar. Cierra otras apps y vuelve a intentarlo.', 5000);
+  } finally { btn.disabled = false; }
+}
+function showExport(blob, name, w, h, reduced) {
+  const file = new File([blob], name, { type: 'image/jpeg' });
+  const url = URL.createObjectURL(blob);
+  let canShare = false;
+  try { canShare = !!(navigator.canShare && navigator.canShare({ files: [file] })); } catch (e) { canShare = false; }
+  openSheet('modal', (sh) => {
+    const img = el('img', { src: url, alt: 'Foto exportada' }); img.dataset.url = url;
+    sh.append(
+      el('div', { className: 'grabber' }),
+      el('div', { className: 'sheet-nav' }, [el('span'), el('h2', { textContent: 'Exportar' }),
+        el('button', { className: 'btn-text', type: 'button', textContent: 'Cerrar', onclick: closeSheet })]),
+      img,
+      el('p', { className: 'facts', textContent: `${w} × ${h} · ${megapixels(w, h)} · JPG · ${fileSize(blob.size)} · sin ubicación` }),
+    );
+    if (canShare) {
+      sh.append(el('button', { className: 'btn-fill block', type: 'button', textContent: 'Guardar en Fotos o compartir', onclick: async () => {
+        try { await navigator.share({ files: [file] }); closeSheet(); }
+        catch (e) { if (e && e.name !== 'AbortError') toast('No se abrió el menú de compartir. Mantén pulsada la imagen y elige «Guardar en Fotos».', 6000); }
+      } }));
+    }
+    sh.append(el('p', { className: 'facts', textContent: (canShare ? 'Elige «Guardar imagen» para llevarla a Fotos, o ' : '') +
+      (canShare ? 'mantén pulsada la imagen.' : 'Mantén pulsada la imagen y elige «Guardar en Fotos».') +
+      (reduced ? ' Reducida a 16 MP por el límite de memoria de Safari.' : '') }));
+  });
+}
+
+/* ---------- start ---------- */
+(async () => {
+  try { if (navigator.storage && navigator.storage.persist) await navigator.storage.persist(); } catch (e) {}
+  try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {}); } catch (e) {}
+  await store.open();
+  try { state.userPresets = (await store.all('presets')).sort((a, b) => a.createdAt.localeCompare(b.createdAt)); } catch (e) { state.userPresets = []; }
+  selectAdj(state.adj, false);
+  renderLibrary();
+})();
+})();
+</script>
+
+</body>
+</html>
