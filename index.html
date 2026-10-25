@@ -315,7 +315,7 @@ svg.i.xs { width: 16px; height: 16px; stroke-width: 2; }
 .adj-value { margin: 1px 0 0; min-height: 24px; font-size: 20px; line-height: 24px; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -.01em; color: var(--text);
   transition: color var(--t-fast); display: inline-flex; align-items: center; gap: 6px; }
 .adj-value.zero { color: var(--text-muted); font-weight: 500; }
-button.adj-value { padding: 0 8px; border-radius: 8px; cursor: text; }
+button.adj-value { padding: 8px 14px; margin: -8px -6px; border-radius: 10px; cursor: text; }   /* a 40 pt tall target; negative margins keep the layout */
 button.adj-value:active { background: var(--fill); }
 .adj-input { width: 7.5ch; min-height: 26px; margin-top: 1px; padding: 0 6px; border: 0; border-radius: 8px; background: var(--fill-strong); color: var(--text);
   font: 600 20px/24px var(--font); font-variant-numeric: tabular-nums; text-align: center; letter-spacing: -.01em; }
@@ -427,6 +427,24 @@ button.adj-value:active { background: var(--fill); }
 .ptile[aria-pressed="true"] .thumb::after { border-color: var(--accent); border-image: none; box-shadow: 0 0 14px rgb(167 139 250 / .35); }
 .ptile[aria-pressed="true"] canvas { transform: scale(.9); }
 .ptile:active canvas { transform: scale(.86); }
+.ptile.browse span:last-child { color: var(--text); }
+.sheet.modal.tall { min-height: min(78vh, 720px); align-content: start; }
+.lb-body { display: grid; gap: 12px; }
+.lb-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+@media (min-width: 520px) { .lb-grid { grid-template-columns: repeat(4, 1fr); } }
+.lb-tile { display: grid; gap: 6px; justify-items: center; font-size: .75rem; font-weight: 500; color: var(--text-2); text-align: center; min-width: 0; }
+.lb-tile canvas { width: 100%; aspect-ratio: 1; border-radius: 14px; background: var(--fill); display: block; transition: transform var(--t-med) var(--bounce), box-shadow var(--t-fast); }
+.lb-tile span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-tile[aria-pressed="true"] canvas { box-shadow: 0 0 0 2px var(--sheet-bg), 0 0 0 4px var(--accent); }
+.lb-tile[aria-pressed="true"] span { color: var(--text); font-weight: 600; }
+.lb-list { display: grid; background: var(--fill); border-radius: var(--r-md); overflow: hidden; }
+.lb-row { display: grid; grid-template-columns: 52px 1fr auto 16px; align-items: center; gap: 12px; padding: 8px 12px; text-align: left; min-height: 64px; }
+.lb-row + .lb-row { border-top: .5px solid var(--separator); }
+.lb-row canvas { width: 52px; height: 52px; border-radius: 10px; background: var(--fill); }
+.lb-name { font-size: 1rem; font-weight: 500; color: var(--text); }
+.lb-count { font-size: .875rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.lb-row .chev { transform: rotate(180deg); color: var(--text-muted); }
+.lb-head { display: flex; align-items: center; justify-content: space-between; }
 .ptile .addbox { display: grid; place-items: center; background: transparent; border: 1.5px dashed var(--separator); color: var(--accent-text); }
 .ptile .mine { position: absolute; right: -2px; top: -2px; width: 16px; height: 16px; border-radius: 50%; background: var(--text); color: var(--on-accent); display: grid; place-items: center; z-index: 1; }
 .ptile .mine svg { width: 10px; height: 10px; stroke-width: 2.6; }
@@ -506,6 +524,8 @@ button.adj-value:active { background: var(--fill); }
 .ex-preview .done { position: absolute; right: 10px; top: 10px; width: 30px; height: 30px; border-radius: 50%; background: var(--success); color: #fff; display: grid; place-items: center;
   animation: pop .5s var(--bounce); }
 .ex-preview .done svg { width: 18px; height: 18px; stroke-width: 2.6; }
+.bk-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.bk-row .btn { min-height: 46px; padding: 0 12px; font-size: .9375rem; }
 .about { display: grid; gap: 4px; text-align: center; }
 .about .wordmark { height: 18px; justify-self: center; }
 
@@ -567,6 +587,7 @@ button.adj-value:active { background: var(--fill); }
       <button id="selDelete" class="round press danger" type="button" data-i18n-aria="delete" disabled><svg class="i" data-icon="trash"></svg></button>
     </div>
   </div>
+  <input id="restorePick" type="file" accept=".lumora,application/octet-stream" hidden>
   <input id="pick" type="file" accept="image/jpeg,image/png,image/heic,image/heif,.jpg,.jpeg,.png,.heic,.heif" multiple hidden>
 </section>
 
@@ -724,6 +745,16 @@ const STR = {
     compare: 'Antes y después', splitPos: 'Divisor entre original y edición', editedLabel: 'Editada', typeValue: 'Escribir un valor exacto', estSize: (s) => `Peso estimado ≈ ${s}`, undo: 'Deshacer', redo: 'Rehacer', moreOptions: 'Más opciones', export: 'Exportar',
     fine: 'Ajuste fino', fineTag: 'FINO', manageLook: 'Gestionar look', resetValue: 'Restablecer valor', looks: 'Looks',
     rotate: 'Girar 90° a la izquierda', flip: 'Voltear en horizontal', aspect: 'Proporción', reset: 'Restablecer', editMode: 'Herramientas de edición',
+    backup: 'Copia de seguridad', backupMake: 'Crear copia', backupRestore: 'Restaurar', recShort: 'Para ti',
+    backupNote: 'Un solo archivo con tus fotos, ediciones, favoritas y looks. Guárdalo tú en Archivos o donde quieras; Lumora no sube nada. Al restaurar solo se añade lo que falta.',
+    backupEmpty: 'No hay nada que copiar todavía.', backupMade: (n, sz) => `Copia lista: ${n} ${plural(n, 'foto', 'fotos')}, ${sz}`, backupFail: 'No se pudo completar. Inténtalo de nuevo.',
+    backupBad: 'Ese archivo no es una copia de Lumora.', restoring: (i, n) => `Restaurando ${i} de ${n}…`,
+    restored: (a, s, l) => `Restauradas ${a} ${plural(a, 'foto', 'fotos')}` + (s ? `; ${s} ya estaban` : '') + (l ? `; ${l} ${plural(l, 'look', 'looks')}` : ''),
+    browseLooks: 'Looks', recommended: 'Recomendados', categories: 'Categorías', yours: 'Tuyos', lookOriginals: 'Lumora Originales', noYours: 'Aún no tienes looks propios.',
+    recFor: (c) => `Elegidos para esta foto por su luz y su color: ${c}.`, looksTotal: (n) => `${n} looks incluidos`,
+    quickActions: 'Acciones rápidas', qaHint: 'Un toque para aplicarlas. Se suman a tu edición y puedes deshacerlas.', qaApplied: (n) => `${n} aplicado`,
+    'qa.auto': 'Auto', 'qa.brighten': 'Aclarar', 'qa.pop': 'Realzar', 'qa.clearSky': 'Cielo nítido', 'qa.warm': 'Más cálido', 'qa.cool': 'Más frío', 'qa.bw': 'Blanco y negro',
+    'qa.soften': 'Suavizar', 'qa.blurBg': 'Desenfocar fondo', 'qa.vignette': 'Viñeta', 'qa.denoise': 'Quitar ruido', 'qa.sharpen': 'Más nitidez', 'qa.film': 'Película', 'qa.sunset': 'Atardecer', 'qa.night': 'Noche',
     tMasks: 'Máscaras', grpMasksHint: 'Pincel, lineal y radial, con sus ajustes', noMasks: 'Sin máscaras todavía', maskHint: 'Añade una máscara para ajustar solo una zona, o usa Quitar.',
     'mask.brush': 'Pincel', 'mask.linear': 'Lineal', 'mask.radial': 'Radial', remove: 'Quitar', removeHint: 'Pinta sobre lo que quieras quitar.', clearAll: 'Borrar todo',
     brushSize: 'Tamaño del pincel', overlay: 'Mostrar la zona de la máscara', invert: 'Invertir máscara', erase: 'Borrar con el pincel', deleteMask: 'Eliminar máscara',
@@ -790,6 +821,16 @@ const STR = {
     compare: 'Before and after', splitPos: 'Divider between original and edit', editedLabel: 'Edited', typeValue: 'Type an exact value', estSize: (s) => `Estimated size ≈ ${s}`, undo: 'Undo', redo: 'Redo', moreOptions: 'More options', export: 'Export',
     fine: 'Fine adjustment', fineTag: 'FINE', manageLook: 'Manage look', resetValue: 'Reset value', looks: 'Looks',
     rotate: 'Rotate 90° left', flip: 'Flip horizontally', aspect: 'Aspect ratio', reset: 'Reset', editMode: 'Editing tools',
+    backup: 'Backup', backupMake: 'Back up', backupRestore: 'Restore', recShort: 'For you',
+    backupNote: 'One file with your photos, edits, favorites and looks. Keep it in Files or wherever you like; Lumora uploads nothing. Restoring only adds what is missing.',
+    backupEmpty: 'Nothing to back up yet.', backupMade: (n, sz) => `Backup ready: ${n} ${plural(n, 'photo', 'photos')}, ${sz}`, backupFail: 'That didn’t work. Please try again.',
+    backupBad: 'That file isn’t a Lumora backup.', restoring: (i, n) => `Restoring ${i} of ${n}…`,
+    restored: (a, s, l) => `Restored ${a} ${plural(a, 'photo', 'photos')}` + (s ? `; ${s} already here` : '') + (l ? `; ${l} ${plural(l, 'look', 'looks')}` : ''),
+    browseLooks: 'Looks', recommended: 'Recommended', categories: 'Categories', yours: 'Yours', lookOriginals: 'Lumora Originals', noYours: 'You have no looks of your own yet.',
+    recFor: (c) => `Picked for this photo from its light and colour: ${c}.`, looksTotal: (n) => `${n} looks included`,
+    quickActions: 'Quick Actions', qaHint: 'One tap applies them. They add to your edit and can be undone.', qaApplied: (n) => `${n} applied`,
+    'qa.auto': 'Auto', 'qa.brighten': 'Brighten', 'qa.pop': 'Pop', 'qa.clearSky': 'Clear Sky', 'qa.warm': 'Warmer', 'qa.cool': 'Cooler', 'qa.bw': 'Black & White',
+    'qa.soften': 'Soften', 'qa.blurBg': 'Blur Background', 'qa.vignette': 'Vignette', 'qa.denoise': 'Reduce Noise', 'qa.sharpen': 'Sharpen', 'qa.film': 'Film', 'qa.sunset': 'Sunset', 'qa.night': 'Night',
     tMasks: 'Masks', grpMasksHint: 'Brush, linear and radial, with their adjustments', noMasks: 'No masks yet', maskHint: 'Add a mask to adjust just one area, or use Remove.',
     'mask.brush': 'Brush', 'mask.linear': 'Linear', 'mask.radial': 'Radial', remove: 'Remove', removeHint: 'Paint over anything you want to remove.', clearAll: 'Clear all',
     brushSize: 'Brush Size', overlay: 'Show mask area', invert: 'Invert mask', erase: 'Erase with the brush', deleteMask: 'Delete mask',
@@ -927,6 +968,9 @@ const ICONS = {
   eye: '<path d="M2.75 12S6.25 5.75 12 5.75 21.25 12 21.25 12 17.75 18.25 12 18.25 2.75 12 2.75 12z"/><circle cx="12" cy="12" r="3"/>',
   eraser: '<path d="m15 4.5 5.5 5.5-9 9H6.25L3.5 16.25a1.5 1.5 0 0 1 0-2.12z"/><path d="M9 10.5 14.5 16M11.5 19.5h9"/>',
   invert: '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 0 0 17z" fill="currentColor" stroke="none"/><path d="M15 8.5h3M16.5 7v3M15 15.5h3"/>',
+  grid: '<rect x="4" y="4" width="6.5" height="6.5" rx="1.75"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.75"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.75"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.75"/>',
+  wand: '<path d="m4 20 10.5-10.5"/><path d="m13 8 3 3"/><path d="M17.5 3.5v3M16 5h3M20 9.5v2M19 10.5h2M11.5 3.5v1.5M10.75 4.25h1.5"/>',
+  restore: '<path d="M12 14.5v-11"/><path d="M8 10.5l4 4 4-4"/><path d="M8.5 10.5H7.25A2.25 2.25 0 0 0 5 12.75v6A2.25 2.25 0 0 0 7.25 21h9.5A2.25 2.25 0 0 0 19 18.75v-6a2.25 2.25 0 0 0-2.25-2.25H15.5"/>',
   /* adjustments: the tone family shares one 8.5 circle */
   exposure: '<circle cx="12" cy="12" r="8.5"/><path d="M6 18 18 6"/><path d="M7.25 9.25h3.5M9 7.5V11M13.25 14.75h3.5"/>',
   contrast: '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/>',
@@ -1000,8 +1044,51 @@ const BUILTIN_PRESETS = [
   { id: 'b-bn-suave',  names: ['B/N suave', 'Soft B&W'],    values: { saturation: -100, contrast: 15, shadows: 10 } },
   { id: 'b-bn-fuerte', names: ['B/N fuerte', 'Strong B&W'], values: { saturation: -100, contrast: 45, whites: 20, blacks: -20 } },
 ];
+/* The look catalogue: 12 categories x 12 looks, each a category base plus one of 12 shared variations
+   (warmer, cooler, brighter ...). Our own values and names; ids are stable ('c-<category>-<n>'). */
+const LOOK_CATS = [
+  { id: 'portrait', names: ['Retrato', 'Portrait'], base: { exposure: .1, contrast: -5, highlights: -15, shadows: 15, texture: -25, clarity: -10, temp: 6, vibrance: 8, saturation: -4 } },
+  { id: 'landscape', names: ['Paisaje', 'Landscape'], base: { contrast: 12, highlights: -30, shadows: 20, clarity: 20, dehaze: 15, vibrance: 22, mixSBlue: 15, mixSGreen: 10 } },
+  { id: 'film', names: ['Película', 'Film'], base: { contrast: -8, blacks: 28, highlights: -15, saturation: -12, grain: 35, temp: 5, gShH: 200, gShS: 20, gHiH: 40, gHiS: 18 } },
+  { id: 'bw', names: ['Blanco y negro', 'Black & White'], base: { saturation: -100, contrast: 25, clarity: 10, grain: 12 } },
+  { id: 'cinematic', names: ['Cine', 'Cinematic'], base: { contrast: 15, highlights: -25, shadows: 10, blacks: -10, saturation: -8, vignette: -20, gShH: 190, gShS: 45, gHiH: 32, gHiS: 35 } },
+  { id: 'vintage', names: ['Vintage', 'Vintage'], base: { temp: 18, tint: 6, contrast: -12, blacks: 30, saturation: -18, grain: 28, vignette: -25, gHiH: 45, gHiS: 22 } },
+  { id: 'vivid', names: ['Vivo', 'Vivid'], base: { contrast: 18, vibrance: 35, saturation: 8, clarity: 12, dehaze: 8 } },
+  { id: 'moody', names: ['Sombrío', 'Moody'], base: { exposure: -.3, contrast: 12, highlights: -30, shadows: -10, blacks: -15, saturation: -20, vignette: -30, dehaze: 10, gShH: 215, gShS: 25 } },
+  { id: 'airy', names: ['Claro y suave', 'Bright & Airy'], base: { exposure: .45, contrast: -15, highlights: -20, shadows: 30, whites: 10, blacks: 20, saturation: -10, temp: 4, clarity: -8 } },
+  { id: 'night', names: ['Noche y ciudad', 'Night & City'], base: { exposure: .15, contrast: 15, highlights: -40, shadows: 25, temp: -12, tint: 8, noise: 30, vibrance: 15, gShH: 230, gShS: 30 } },
+  { id: 'food', names: ['Comida', 'Food'], base: { exposure: .15, contrast: 10, temp: 10, vibrance: 25, texture: 15, clarity: 6, highlights: -10 } },
+  { id: 'seasons', names: ['Estaciones', 'Seasons'], list: [
+    ['Primavera', 'Spring', { exposure: .2, shadows: 15, vibrance: 20, mixSGreen: 20, mixHGreen: -15, tint: 4 }],
+    ['Primavera', 'Spring', { exposure: .3, contrast: -8, saturation: -6, mixSMagenta: 20, temp: 4 }],
+    ['Primavera', 'Spring', { vibrance: 28, clarity: 8, mixLGreen: 15, mixSAqua: 15 }],
+    ['Verano', 'Summer', { temp: 15, vibrance: 25, contrast: 10, dehaze: 10, mixSBlue: 20 }],
+    ['Verano', 'Summer', { exposure: .3, temp: 10, highlights: -20, mixHAqua: 15, mixSAqua: 25 }],
+    ['Verano', 'Summer', { temp: 22, tint: 5, contrast: 15, gHiH: 40, gHiS: 30 }],
+    ['Otoño', 'Autumn', { temp: 20, mixHOrange: -10, mixSOrange: 25, mixHYellow: -25, mixHGreen: -40, contrast: 8 }],
+    ['Otoño', 'Autumn', { temp: 25, saturation: -10, blacks: 20, grain: 20, gShH: 30, gShS: 20 }],
+    ['Otoño', 'Autumn', { mixHGreen: -60, mixSGreen: -10, mixSOrange: 30, vignette: -20, contrast: 12 }],
+    ['Invierno', 'Winter', { temp: -25, saturation: -20, exposure: .2, highlights: -15, whites: 10 }],
+    ['Invierno', 'Winter', { temp: -15, tint: 6, contrast: -10, blacks: 20, gShH: 220, gShS: 30 }],
+    ['Invierno', 'Winter', { temp: -30, clarity: 15, dehaze: 12, mixSBlue: 25, saturation: -12 }]] },
+];
+const LOOK_VARIANTS = [
+  {}, { temp: 12, tint: 3 }, { temp: -12 }, { exposure: .25, shadows: 10 }, { exposure: -.25, blacks: -10, vignette: -15 }, { contrast: 18, clarity: 8 },
+  { contrast: -15, highlights: -10, texture: -10 }, { vibrance: 20, saturation: 8 }, { vibrance: -15, saturation: -15 }, { blacks: 25, contrast: -8 },
+  { grain: 30, vignette: -20 }, { contrast: 25, dehaze: 12, vibrance: 10, clarity: 12 },
+];
+function mergeLook(a, b) {
+  const out = { ...a };
+  for (const k in b) { const d = BY_KEY[k]; if (!d) continue; out[k] = d.scale === 'hue' ? b[k] : clamp(Number(((out[k] || 0) + b[k]).toFixed(2)), d.min, d.max); }
+  return out;
+}
+const CATALOG = LOOK_CATS.flatMap((c) => (c.list
+  ? c.list.map(([es, en, v], i) => ({ id: `c-${c.id}-${i + 1}`, cat: c.id, names: [`${es} ${i % 3 + 1}`, `${en} ${i % 3 + 1}`], values: v }))
+  : LOOK_VARIANTS.map((v, i) => ({ id: `c-${c.id}-${i + 1}`, cat: c.id, names: c.names.map((n) => `${n} ${String(i + 1).padStart(2, '0')}`), values: mergeLook(c.base, v) }))));
+const catName = (id) => (id === 'originals' ? t('lookOriginals') : id === 'recommended' ? t('recommended') : id === 'yours' ? t('yours') : pname(LOOK_CATS.find((c) => c.id === id)));
+const lookCount = () => BUILTIN_PRESETS.length + CATALOG.length;
 const pname = (pr) => (pr.names ? pr.names[lang === 'es' ? 0 : 1] : pr.name);
-const presetById = (id) => BUILTIN_PRESETS.find((x) => x.id === id) || state.userPresets.find((x) => x.id === id) || null;
+const presetById = (id) => BUILTIN_PRESETS.find((x) => x.id === id) || CATALOG.find((x) => x.id === id) || state.userPresets.find((x) => x.id === id) || null;
 const activePreset = () => (state.settings.preset && presetById(state.settings.preset.id)) || null;
 // what the renderer sees: the photo's own values plus the preset, scaled by its amount
 function effective(s) {
@@ -1010,6 +1097,7 @@ function effective(s) {
   if (pr) {
     const f = s.preset.amount / 100;
     for (const d of SLIDERS) {
+      if (d.scale === 'hue') { if (pr.values[d.key] !== undefined && f > 0) out[d.key] = pr.values[d.key]; continue; }
       const add = (pr.values[d.key] || 0) * f;
       if (add) out[d.key] = Math.min(d.max, Math.max(d.min, s[d.key] + add));
     }
@@ -1811,9 +1899,14 @@ async function openSettings() {
           seg([[t('themeAuto'), 'auto'], [t('light'), 'light'], [t('dark'), 'dark']], pref('lumora.theme') || 'auto', (v) => {
             setPref('lumora.theme', v === 'auto' ? null : v); applyTheme();
           }, t('appearance'))]),
+        el('div', { className: 'opt' }, [el('p', { className: 'field-label', textContent: t('backup') }),
+          el('div', { className: 'bk-row' }, [
+            el('button', { className: 'btn secondary press', type: 'button', onclick: makeBackup }, [icon('share', 'i sm'), t('backupMake')]),
+            el('label', { className: 'btn secondary press', htmlFor: 'restorePick', tabIndex: 0, role: 'button' }, [icon('restore', 'i sm'), t('backupRestore')])]),
+          el('p', { className: 'facts', textContent: t('backupNote'), style: 'text-align:left' })]),
         el('div', { className: 'about' }, [
           (() => { const m = $('.wordmark').cloneNode(true); return m; })(),
-          el('p', { className: 'facts', textContent: 'Light · Tone · Precision · 2.0' }),
+          el('p', { className: 'facts', textContent: 'Light · Tone · Precision · 2.1' }),
           el('p', { className: 'facts', textContent: t('storageLine', count, state.userPresets.length) }),
           el('p', { className: 'facts', textContent: t('privacy') })]));
     };
@@ -1822,10 +1915,69 @@ async function openSettings() {
 }
 $('#settingsBtn').addEventListener('click', openSettings);
 
+/* ---------- backup: one .lumora file with photos (as imported), edits, favourites and your looks ----------
+   Layout: "LUMORABK1\n", a 4-byte little-endian length, the JSON manifest, then the photo files back to back.
+   Nothing is uploaded: the file goes to the share sheet or a download, and restore only adds what is missing. */
+const BK_MAGIC = 'LUMORABK1\n';
+async function makeBackup() {
+  try {
+    const photos = await store.all('photos'), edits = await store.all('edits'), presets = await store.all('presets');
+    if (!photos.length && !presets.length) { toast(t('backupEmpty'), 2600, 'err'); return; }
+    let off = 0; const blobs = [];
+    const ref = (b) => { const r = { off, len: b.size, type: b.type || 'application/octet-stream' }; off += b.size; blobs.push(b); return r; };
+    const man = { app: 'Lumora', format: 1, created: now(),
+      photos: photos.map(({ thumb, original, ...rest }) => ({ ...rest, thumb: ref(thumb), original: ref(original) })), edits, presets };
+    const json = new TextEncoder().encode(JSON.stringify(man)), len = new Uint8Array(4);
+    new DataView(len.buffer).setUint32(0, json.length, true);
+    const name = `lumora-backup-${now().slice(0, 10)}.lumora`;
+    const file = new File([BK_MAGIC, len, json, ...blobs], name, { type: 'application/octet-stream' });
+    let shared = false;
+    try { if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file] }); shared = true; } }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+    if (!shared) { const url = URL.createObjectURL(file); const a = el('a', { href: url, download: name }); document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 60000); }
+    toast(t('backupMade', photos.length, fileSize(file.size)), 3200, 'ok');
+  } catch (e) { toast(t('backupFail'), 4000, 'err'); }
+}
+async function restoreBackup(file) {
+  try {
+    if ((await file.slice(0, BK_MAGIC.length).text()) !== BK_MAGIC) throw new Error('format');
+    const n = new DataView(await file.slice(BK_MAGIC.length, BK_MAGIC.length + 4).arrayBuffer()).getUint32(0, true);
+    const start = BK_MAGIC.length + 4, base = start + n;
+    if (n <= 0 || base > file.size) throw new Error('format');
+    const man = JSON.parse(await file.slice(start, base).text());
+    if (!man || man.app !== 'Lumora' || !Array.isArray(man.photos)) throw new Error('format');
+    const have = new Set((await store.all('photos')).map((p) => p.id)), haveP = new Set((await store.all('presets')).map((p) => p.id));
+    const part = (r) => { if (!r || !(r.off >= 0) || !(r.len > 0) || base + r.off + r.len > file.size) throw new Error('format'); return file.slice(base + r.off, base + r.off + r.len, r.type); };
+    let added = 0, skipped = 0, looks = 0;
+    const edits = new Map((Array.isArray(man.edits) ? man.edits : []).map((e) => [e && e.photoId, e]));
+    for (const ph of man.photos) {
+      if (!ph || typeof ph.id !== 'string') continue;
+      if (have.has(ph.id)) { skipped++; continue; }
+      toast(t('restoring', added + skipped + 1, man.photos.length), 60000);
+      const rec = { ...ph, thumb: part(ph.thumb), original: part(ph.original) };
+      rec.thumb = new Blob([await rec.thumb.arrayBuffer()], { type: rec.thumb.type });
+      rec.original = new Blob([await rec.original.arrayBuffer()], { type: rec.original.type });
+      await store.put('photos', rec); added++;
+      const ed = edits.get(ph.id);
+      if (ed && ed.settings) await store.put('edits', { photoId: ph.id, settings: toStored(fromStored(ed.settings)), updatedAt: ed.updatedAt || now() });
+    }
+    for (const pr of Array.isArray(man.presets) ? man.presets : []) {
+      if (!pr || typeof pr.id !== 'string' || haveP.has(pr.id) || !pr.values) continue;
+      const values = {}; for (const k in pr.values) if (BY_KEY[k] && typeof pr.values[k] === 'number' && isFinite(pr.values[k])) values[k] = clamp(pr.values[k], BY_KEY[k].min, BY_KEY[k].max);
+      const rec = { id: pr.id, name: String(pr.name || t('myLook', looks + 1)).slice(0, 24), values, createdAt: pr.createdAt || now(), builtIn: false };
+      await store.put('presets', rec); state.userPresets.push(rec); looks++;
+    }
+    state.userPresets.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    closeSheet(); await renderLibrary();
+    toast(t('restored', added, skipped, looks), 4200, 'ok');
+  } catch (e) { toast(e && e.message === 'format' ? t('backupBad') : t('backupFail'), 4500, 'err'); }
+}
+$('#restorePick').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) restoreBackup(f); });
+
 /* ---------- editor state ---------- */
 const state = { photo: null, settings: { ...DEFAULTS, crop: { ...DEFAULT_CROP }, preset: null, masks: [], heal: [] }, src: null, renderer: null, orig: false, compareLock: false, frame: 0,
   saveTimer: 0, changed: false, adj: 'exposure', adjByMode: { light: 'exposure', color: 'temp', effects: 'clarity' }, history: [], hIndex: -1, autoPrev: null,
-  mode: 'light', view: { k: 1 }, userPresets: [], selecting: false, selected: new Set(), clipboard: null, split: { on: false, x: 0 }, editingValue: false, sub: null, maskPane: 'masks', maskSel: -1, maskParam: 'exposure', brushSize: 30, brushErase: false, showOverlay: false, overlayUntil: 0, base: null, healKey: '[]', mixColor: 0, mixAttr: 'H', gradeRegion: 'Sh', gradeAttr: 'H' };
+  mode: 'light', view: { k: 1 }, userPresets: [], selecting: false, selected: new Set(), clipboard: null, split: { on: false, x: 0 }, editingValue: false, sub: null, lookCat: 'recommended', recommended: null, maskPane: 'masks', maskSel: -1, maskParam: 'exposure', brushSize: 30, brushErase: false, showOverlay: false, overlayUntil: 0, base: null, healKey: '[]', mixColor: 0, mixAttr: 'H', gradeRegion: 'Sh', gradeAttr: 'H' };
 const canvas = $('#view');
 function ensureRenderer() {
   if (!state.renderer) state.renderer = new Renderer(canvas);
@@ -1936,7 +2088,11 @@ for (const g of TOOL_TABS) {
     b.addEventListener('click', () => selectAdj(d.key, true));
     grp.append(b);
   }
-  if (g === 'light') row.append(autoBtn, el('span', { className: 'tool-sep', ariaHidden: 'true' }), grp);
+  if (g === 'light') {
+    const qb = el('button', { className: 'tool pane-open', type: 'button', id: 'quickBtn' }, [ringSvg(), icon('wand')]);
+    qb.dataset.i18nAria = 'quickActions'; qb.addEventListener('click', () => openQuickActions());
+    row.append(qb, autoBtn, el('span', { className: 'tool-sep', ariaHidden: 'true' }), grp);
+  }
   else if (g === 'color') {   // Mixer and Grading open their own panels
     const open = (pane, ic) => { const b = el('button', { className: 'tool pane-open', type: 'button', id: 'open-' + pane }, [ringSvg(), icon(ic)]);
       b.dataset.i18nAria = pane === 'mixer' ? 'mixer' : 'grading'; b.addEventListener('click', () => openSub(pane)); return b; };
@@ -1986,7 +2142,7 @@ function stepTool(dir) {
     const i = keys.indexOf(state.adj), j = clamp(i + dir, 0, keys.length - 1);
     if (j !== i) selectAdj(keys[j], true);
   } else if (state.mode === 'looks') {
-    const ids = ['', ...BUILTIN_PRESETS.map((p) => p.id), ...state.userPresets.map((p) => p.id)];
+    const ids = ['', ...lookIds(), ...(state.lookCat !== 'yours' ? state.userPresets.map((p) => p.id) : [])];
     const cur = activePreset() ? state.settings.preset.id : '';
     const j = clamp(ids.indexOf(cur) + dir, 0, ids.length - 1);
     if (ids[j] !== cur) { choosePreset(ids[j] || null); const tile = presetRow.querySelector(`.ptile[data-id="${ids[j]}"]`); if (tile) tile.scrollIntoView({ inline: 'center', block: 'nearest', behavior: reduceMotion() ? 'auto' : 'smooth' }); }
@@ -2140,7 +2296,7 @@ function syncHeal(force) {
   if (!force && key === state.healKey) return;
   state.healKey = key;
   const prev = state.src;
-  state.src = state.settings.heal.length ? applyHeal(state.base, state.settings.heal) : state.base;
+  state.src = state.settings.heal.length ? applyHeal(state.base, state.settings.heal) : state.base; state.recommended = null;
   if (prev && prev !== state.base && prev !== state.src) prev.width = prev.height = 0;
   if (state.renderer && !force) { state.renderer.setImage(state.src); requestDraw(); }
 }
@@ -2940,6 +3096,52 @@ function syncChips() {
   }
 }
 
+/* ---------- Recommended: on-device reading of the photo's light and colour, matched to categories ---------- */
+function photoTraits(src) {
+  const [w, h] = fit(src.width, src.height, 120, Infinity), d = rasterize(src, w, h).getContext('2d').getImageData(0, 0, w, h).data;
+  let n = 0, sl = 0, sl2 = 0, ss = 0, warm = 0, skin = 0, sky = 0, green = 0, dark = 0, bright = 0, topN = 0;
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    const i = (y * w + x) * 4, r = d[i] / 255, g = d[i + 1] / 255, b = d[i + 2] / 255;
+    const mx = Math.max(r, g, b), mn = Math.min(r, g, b), c = mx - mn, sat = mx ? c / mx : 0;
+    let hue = 0; if (c) hue = mx === r ? ((g - b) / c + 6) % 6 : mx === g ? (b - r) / c + 2 : (r - g) / c + 4; hue *= 60;
+    const lum = .2126 * r + .7152 * g + .0722 * b;
+    n++; sl += lum; sl2 += lum * lum; ss += sat; warm += r - b;
+    if (hue >= 5 && hue <= 45 && sat > .15 && sat < .65 && mx > .25 && mx < .97) skin++;
+    if (hue >= 70 && hue <= 165 && sat > .2) green++;
+    if (lum < .12) dark++; if (lum > .88) bright++;
+    if (y < h / 3) { topN++; if (hue >= 185 && hue <= 250 && sat > .15 && mx > .35) sky++; }
+  }
+  const lum = sl / n;
+  return { lum, std: Math.sqrt(Math.max(0, sl2 / n - lum * lum)), sat: ss / n, warm: warm / n, skin: skin / n, green: green / n, sky: sky / Math.max(1, topN),
+    dark: dark / n, bright: bright / n, night: lum < .22 && bright / n > .005, tall: src.height > src.width };
+}
+const CAT_FIT = {
+  portrait: (t) => t.skin * 6 * (1 - Math.min(.9, t.sky * 2.5)) + (t.tall ? .15 : 0),   // warm skies read like skin: discount them landscape: (t) => t.sky * 2.5 + t.green * 2.5, film: (t) => .3 + (t.sat < .3 ? .15 : 0),
+  bw: (t) => (t.sat < .18 ? .55 : .12) + t.std * .4, cinematic: (t) => .28 + t.std * .5, vintage: (t) => .22 + Math.max(0, t.warm) * 2,
+  vivid: (t) => (t.sat < .35 ? .4 : .18) + (t.green + t.sky) * .8, moody: (t) => (t.lum < .35 ? .45 : .12), airy: (t) => (t.lum > .5 ? .42 : t.skin > .05 ? .3 : .1),
+  night: (t) => (t.night ? 1 : 0), food: (t) => (t.warm > .05 && t.sat > .3 && t.skin < .2 ? .35 : .05), seasons: (t) => .18 + t.green * 1.5 + Math.max(0, t.warm),
+};
+function recommendLooks(src) {
+  const tr = photoTraits(src);
+  const cats = Object.entries(CAT_FIT).map(([id, f]) => [id, f(tr)]).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([id]) => id);
+  // within a category, favour looks that move the photo where it needs to go
+  const fitLook = (v) => {
+    let sc = 1;
+    const ex = (v.exposure || 0) + (v.shadows || 0) / 200;
+    if (tr.lum < .35) sc += ex * 2; else if (tr.lum > .62) sc -= Math.max(0, ex) * 2;
+    if (tr.std < .16) sc += ((v.contrast || 0) + (v.clarity || 0)) / 60;
+    if (tr.sat > .45) sc -= ((v.vibrance || 0) + (v.saturation || 0)) / 80;
+    if (tr.sat < .2) sc += ((v.vibrance || 0) + (v.saturation || 0)) / 120;
+    return sc;
+  };
+  const picks = [];
+  for (const [i, c] of cats.entries()) {
+    const n = [4, 3, 3, 2][i];
+    picks.push(...CATALOG.filter((x) => x.cat === c).map((x) => [x.id, fitLook(x.values)]).sort((a, b) => b[1] - a[1]).slice(0, n).map(([id]) => id));
+  }
+  return { ids: picks, traits: tr, cats };
+}
+
 /* ---------- looks: live previews, strength, my looks ---------- */
 const presetRow = $('#presetRow');
 function setAmount(v) {
@@ -2962,11 +3164,24 @@ function presetTile(id, name, mine) {
   b.addEventListener('click', () => { if (wasLong()) return; choosePreset(id); });
   return b;
 }
+// the looks shown in the tray: the chosen category (Recommended by default)
+function lookIds(cat = state.lookCat) {
+  if (cat === 'recommended') { if (!state.recommended && state.src) state.recommended = recommendLooks(state.src); return state.recommended ? state.recommended.ids : []; }
+  if (cat === 'originals') return BUILTIN_PRESETS.map((p) => p.id);
+  if (cat === 'yours') return state.userPresets.map((p) => p.id);
+  return CATALOG.filter((x) => x.cat === cat).map((x) => x.id);
+}
 function buildPresetRow() {
-  presetRow.replaceChildren(presetTile(null, t('none')));
-  for (const pr of BUILTIN_PRESETS) presetRow.append(presetTile(pr.id, pname(pr)));
-  presetRow.append(el('span', { className: 'tool-sep', ariaHidden: 'true' }));
-  for (const pr of state.userPresets) presetRow.append(presetTile(pr.id, pr.name, true));
+  const browse = el('button', { className: 'ptile browse', type: 'button', ariaLabel: `${t('browseLooks')}: ${catName(state.lookCat)}` },
+    [el('span', { className: 'thumb' }, [el('div', { className: 'addbox' }, [icon('grid')])]), el('span', { textContent: state.lookCat === 'recommended' ? t('recShort') : catName(state.lookCat) })]);
+  browse.addEventListener('click', openLookBrowser);
+  presetRow.replaceChildren(browse, el('span', { className: 'tool-sep', ariaHidden: 'true' }), presetTile(null, t('none')));
+  for (const id of lookIds()) { const pr = presetById(id); if (pr) presetRow.append(presetTile(pr.id, pname(pr), !pr.names && !pr.cat)); }
+  if (state.lookCat === 'yours' && !state.userPresets.length) presetRow.append(el('span', { className: 'mask-empty', textContent: t('noYours'), style: 'align-self:center;padding:0 6px' }));
+  if (state.lookCat !== 'yours' && state.userPresets.length) {   // your own looks are always one swipe away, as in 1.x
+    presetRow.append(el('span', { className: 'tool-sep', ariaHidden: 'true' }));
+    for (const pr of state.userPresets) presetRow.append(presetTile(pr.id, pr.name, true));
+  }
   const add = el('button', { className: 'ptile add', type: 'button', ariaLabel: t('saveAsLook') },
     [el('span', { className: 'thumb' }, [el('div', { className: 'addbox' }, [icon('plus')])]), el('span', { textContent: t('saveLook') })]);
   add.addEventListener('click', openSavePreset);
@@ -2980,7 +3195,7 @@ function syncPresetTiles() {
   for (const b of presetRow.querySelectorAll('.ptile[data-id]')) b.setAttribute('aria-pressed', b.dataset.id === cur ? 'true' : 'false');
 }
 // each preview = the photo's own adjustments with that look at 100 %, centre square
-function renderPresetPreviews() {
+function renderPresetPreviews(root = presetRow) {
   if (!state.src) return;
   const S = 132, side = Math.min(state.src.width, state.src.height);
   const sq = document.createElement('canvas'); sq.width = sq.height = S;
@@ -2988,13 +3203,104 @@ function renderPresetPreviews() {
   let r;
   try { r = new Renderer(document.createElement('canvas'), true); } catch (e) { return; }
   r.setImage(sq);
-  for (const b of presetRow.querySelectorAll('.ptile[data-id]')) {
-    const id = b.dataset.id;
-    r.draw(effective({ ...state.settings, masks: [], preset: id ? { id, amount: 100 } : null }));
-    b.querySelector('canvas').getContext('2d').drawImage(r.canvas, 0, 0);
+  for (const b of root.querySelectorAll('[data-id] canvas, canvas[data-id]')) {
+    const id = b.dataset.id !== undefined ? b.dataset.id : b.closest('[data-id]').dataset.id;
+    const extra = b.dataset.quick ? QUICK.find((q) => q.id === b.dataset.quick) : null;
+    const base = extra ? quickApply(state.settings, extra) : state.settings;
+    r.draw(effective({ ...base, masks: [], preset: id ? { id, amount: 100 } : (extra ? base.preset : null) }));
+    const g = b.getContext('2d'); g.drawImage(r.canvas, 0, 0, b.width, b.height);
   }
   r.dispose();
 }
+function openLookBrowser() {
+  openSheet('modal', (sh) => {
+    let view = state.lookCat === 'yours' ? 'yours' : state.lookCat === 'recommended' ? 'recommended' : 'categories', cat = view === 'categories' ? state.lookCat : null;
+    const body = el('div', { className: 'lb-body' });
+    const tabs = seg([[t('recommended'), 'recommended'], [t('categories'), 'categories'], [t('yours'), 'yours']], view, (v) => { view = v; cat = null; draw(); }, t('browseLooks'));
+    const pick = (c) => { state.lookCat = c; buildPresetRow(); syncControls(); };
+    const grid = (ids) => {
+      const g = el('div', { className: 'lb-grid' });
+      for (const id of ids) {
+        const pr = presetById(id); if (!pr) continue;
+        const cv = el('canvas', { width: 220, height: 220 }); cv.dataset.id = id;
+        const b = el('button', { className: 'lb-tile press', type: 'button', ariaLabel: t('lookLabel', pname(pr)) }, [cv, el('span', { textContent: pname(pr) })]);
+        b.setAttribute('aria-pressed', activePreset() && state.settings.preset.id === id ? 'true' : 'false');
+        b.addEventListener('click', () => { choosePreset(id); for (const x of g.children) x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+        g.append(b);
+      }
+      return g;
+    };
+    const draw = () => {
+      body.replaceChildren();
+      if (view === 'recommended') {
+        const rec = state.recommended || (state.src ? (state.recommended = recommendLooks(state.src)) : null);
+        body.append(el('p', { className: 'facts', textContent: t('recFor', rec ? rec.cats.map(catName).join(' · ') : '') }), grid(lookIds('recommended')));
+        pick('recommended');
+      } else if (view === 'yours') {
+        body.append(state.userPresets.length ? grid(lookIds('yours')) : el('p', { className: 'facts', textContent: t('noYours') }));
+        const add = el('button', { className: 'btn secondary block press', type: 'button' }, [icon('plus', 'i sm'), t('saveAsLook')]);
+        add.addEventListener('click', () => { closeSheet(); openSavePreset(); }); body.append(add);
+        pick('yours');
+      } else if (cat) {
+        const back = el('button', { className: 'btn plain small press', type: 'button' }, [icon('back', 'i xs'), t('categories')]);
+        back.addEventListener('click', () => { cat = null; draw(); });
+        body.append(el('div', { className: 'lb-head' }, [back, el('strong', { textContent: catName(cat) })]), grid(lookIds(cat)));
+        pick(cat);
+      } else {
+        const list = el('div', { className: 'lb-list' });
+        for (const c of ['originals', ...LOOK_CATS.map((x) => x.id)]) {
+          const ids = lookIds(c), cv = el('canvas', { width: 120, height: 120 }); cv.dataset.id = ids[0];
+          const row = el('button', { className: 'lb-row', type: 'button' }, [cv, el('span', { className: 'lb-name', textContent: catName(c) }), el('span', { className: 'lb-count', textContent: String(ids.length) }), icon('back', 'i xs chev')]);
+          row.addEventListener('click', () => { cat = c; draw(); });
+          list.append(row);
+        }
+        body.append(el('p', { className: 'facts', textContent: t('looksTotal', lookCount()) }), list);
+      }
+      requestAnimationFrame(() => renderPresetPreviews(body));
+    };
+    sh.append(el('div', { className: 'grabber' }), sheetNav(t('browseLooks'), null, textBtn(t('done'), closeSheet, 'strong')), tabs, body);
+    sh.classList.add('tall');
+    draw();
+  });
+}
+
+/* ---------- Quick Actions: one-tap fixes with live previews, added to the current edit (undoable) ---------- */
+const QUICK = [
+  { id: 'auto', icon: 'sparkle' }, { id: 'brighten', v: { exposure: .4, shadows: 20, highlights: -10 } }, { id: 'pop', v: { clarity: 20, vibrance: 25, contrast: 10 } },
+  { id: 'clearSky', v: { dehaze: 20, highlights: -25, mixSBlue: 20, mixLBlue: -15 } }, { id: 'warm', v: { temp: 20, tint: 4 } }, { id: 'cool', v: { temp: -18 } },
+  { id: 'bw', v: { saturation: -100, contrast: 20, clarity: 10 } }, { id: 'soften', v: { texture: -35, clarity: -15, highlights: -10 } }, { id: 'blurBg', v: { lensBlur: 70 } },
+  { id: 'vignette', v: { vignette: -35 } }, { id: 'denoise', v: { noise: 45 } }, { id: 'sharpen', v: { sharpen: 45, texture: 10 } },
+  { id: 'film', v: { grain: 30, blacks: 20, contrast: -8, gShH: 200, gShS: 20 } }, { id: 'sunset', v: { temp: 25, tint: 8, highlights: -20, gHiH: 30, gHiS: 35, vibrance: 15 } },
+  { id: 'night', v: { shadows: 30, highlights: -35, noise: 35, temp: -10 } },
+];
+function quickApply(s, q) {
+  if (q.id === 'auto') { try { return { ...clone(s), ...autoSettings(state.src), masks: s.masks, heal: s.heal }; } catch (e) { return clone(s); } }
+  const next = clone(s);
+  for (const k in q.v) { const d = BY_KEY[k]; next[k] = d.scale === 'hue' ? q.v[k] : clamp(Number(((next[k] || 0) + q.v[k]).toFixed(2)), d.min, d.max); }
+  return next;
+}
+function openQuickActions() {
+  if (!state.src) return;
+  openSheet('modal', (sh) => {
+    const g = el('div', { className: 'lb-grid' });
+    for (const q of QUICK) {
+      const cv = el('canvas', { width: 220, height: 220 }); cv.dataset.id = ''; cv.dataset.quick = q.id;
+      const b = el('button', { className: 'lb-tile press', type: 'button' }, [cv, el('span', { textContent: t('qa.' + q.id) })]);
+      b.addEventListener('click', () => {
+        closeSheet(); crossfade();
+        state.settings = quickApply(state.settings, q); state.autoPrev = null;
+        commit(); layout(); syncControls(); requestDraw(); scheduleSave();
+        toast(t('qaApplied', t('qa.' + q.id)), 2400, 'ok');
+      });
+      g.append(b);
+    }
+    sh.append(el('div', { className: 'grabber' }), sheetNav(t('quickActions'), null, textBtn(t('close'), closeSheet)),
+      el('p', { className: 'facts', textContent: t('qaHint') }), g);
+    sh.classList.add('tall');
+    requestAnimationFrame(() => renderPresetPreviews(g));
+  });
+}
+
 function openSavePreset() {
   const n = state.userPresets.length + 1;
   openSheet('modal', (sh) => {
@@ -3185,7 +3491,11 @@ function setMode(m) {
   if (m === 'masks') { state.maskPane = 'masks'; state.maskSel = -1; buildMaskChips(); }
   showPane();
   if (TOOL_TABS.includes(m) && !state.sub) { selectAdj(state.adjByMode[m], false); centerTool(state.adj, false); }
-  if (m === 'looks') buildPresetRow();
+  if (m === 'looks') {   // open on the category of the look in use, so the selection is visible
+    const pr = activePreset();
+    if (pr && !pr.name && !lookIds().includes(pr.id)) state.lookCat = pr.cat || 'originals';
+    buildPresetRow();
+  }
   if (state.orig) showOrig(false);
   if (m === 'crop' && state.split.on) setSplit(false);
   moveTabIndicator();
@@ -3249,7 +3559,7 @@ function heroDone(hero) {
 async function openEditor(p, fromImg) {
   if (state.selecting) return;
   const hero = heroFrom(fromImg);
-  state.photo = p; state.changed = false; state.autoPrev = null; state.split.on = false; state.orig = false; placeSplit();
+  state.photo = p; state.changed = false; state.autoPrev = null; state.recommended = null; state.split.on = false; state.orig = false; placeSplit();
   const edit = p.sample ? null : await store.get('edits', p.id);
   state.settings = fromStored(edit && edit.settings);
   resetHistory(); state.src = null; zoom.s = 1; zoom.x = zoom.y = 0; clip.style.transform = '';
@@ -3335,7 +3645,7 @@ $('#favBtn').addEventListener('click', async () => {
 /* ---------- more: photo info, copy and paste, revert, save look, remove (action sheet) ---------- */
 $('#moreBtn').addEventListener('click', () => {
   const p = state.photo; if (!p) return;
-  const acts = [{ label: t('copyAdj'), icon: 'copy', run: () => { closeSheet(); openCopySheet(); } }];
+  const acts = [{ label: t('quickActions'), icon: 'wand', run: () => { closeSheet(); openQuickActions(); } }, { label: t('copyAdj'), icon: 'copy', run: () => { closeSheet(); openCopySheet(); } }];
   if (state.clipboard) acts.push({ label: t('pasteAdj'), icon: 'paste', run: () => { closeSheet(); pasteHere(); } });
   if (state.src) acts.push({ label: t('saveAsLook'), icon: 'looks', run: () => { closeSheet(); openSavePreset(); } });
   if (state.src && !isDefault(state.settings)) acts.push({ label: t('revertAll'), icon: 'revert', run: () => {

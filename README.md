@@ -17,4 +17,14 @@ Live: https://whitemex956.github.io/Lumora/ (open in Safari, Share > Add to Home
 - Export sheet with live preview, output resolution, estimated then real file size, quality, and Share / Save to Photos.
 - English by default on every device; Spanish can be chosen in Settings. Light and dark, Reduce Motion and Reduce Transparency respected.
 
+## 2.1: premium tools, all on the device
+
+- Effects: clarity, texture, dehaze, vignette, grain, sharpening, noise reduction, lens corrections (distortion, vignetting, chromatic aberration) and Lens Blur with a focus area set on the photo.
+- Color: an 8-colour mixer (hue, saturation, luminance) and 3-way colour grading.
+- Masks: brush, linear and radial (up to 4 per photo), each with its own light and colour adjustments. Remove: paint over a spot and Lumora fills it from a matching patch nearby.
+- 154 looks in 13 categories, Recommended looks picked from the photo's light and colour, and one-tap Quick Actions.
+- Backup and restore: one `.lumora` file with photos, edits, favourites and looks, saved wherever you choose.
+
+No account, no cloud, no AI service: everything runs in Safari on the device. Not included: cloud sync, video, RAW and generative fill.
+
 Storage is unchanged and backward compatible: IndexedDB database `revelado` (v2) with `photos`, `edits` and `presets`. 2.0 only adds an optional `favorite` field to photo records.
