@@ -1,6 +1,6 @@
 // Caches the app shell so Lumora opens offline. Photos never go through here:
 // they live in IndexedDB on the phone.
-const CACHE = 'lumora-v3';
+const CACHE = 'lumora-v4';
 const SHELL = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png', './icon-1024.png', './icon-32.png'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => {
