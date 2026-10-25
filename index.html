@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Lumora</title>
-<meta name="description" content="Lumora: editor de fotos privado. Light. Tone. Precision.">
+<meta name="description" content="Lumora: a private photo editor. Light. Tone. Precision.">
 <meta name="theme-color" content="#08090C" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#F7F8FA" media="(prefers-color-scheme: light)">
 <meta name="color-scheme" content="dark light">
@@ -734,14 +734,9 @@ const STR = {
     lookLabel: (n) => `Look ${n}`, noLook: 'No look', lookHint: 'Tap a look, or swipe across the photo', open: 'Edit', photoActions: 'Photo actions',
   },
 };
-let lang = 'es';
-function detectLang() {
-  const p = pref('lumora.lang');
-  if (p === 'es' || p === 'en') return p;
-  const list = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || 'es']);
-  const hit = list.find((l) => /^(es|en)\b/i.test(l));
-  return hit ? hit.slice(0, 2).toLowerCase() : 'en';
-}
+let lang = 'en';
+// English everywhere unless Spanish is chosen in Settings
+function detectLang() { return pref('lumora.lang') === 'es' ? 'es' : 'en'; }
 function t(k, ...a) {
   const v = STR[lang][k] !== undefined ? STR[lang][k] : STR.es[k] !== undefined ? STR.es[k] : k;
   return typeof v === 'function' ? v(...a) : v;
@@ -948,7 +943,7 @@ function rasterize(src, w, h) {
 }
 const toBlob = (c, type, q) => new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('encode'))), type, q));
 const isAccepted = (f) => /^image\/(jpeg|heic|heif)$/i.test(f.type) || /\.(jpe?g|heic|heif)$/i.test(f.name || '');
-const baseName = (n) => (n || 'foto').replace(/\.[^.]+$/, '');
+const baseName = (n) => (n || 'photo').replace(/\.[^.]+$/, '');
 const decimal = (v, d) => { const s = Math.abs(v).toFixed(d); return lang === 'es' ? s.replace('.', ',') : s; };
 const megapixels = (w, h) => decimal(w * h / 1e6, 1) + ' MP';
 const fileSize = (b) => b < 1048576 ? Math.round(b / 1024) + ' KB' : decimal(b / 1048576, 1) + ' MB';
@@ -1189,7 +1184,7 @@ async function makeSample() {
   g.fillStyle = 'rgba(0,0,0,.38)'; g.fillRect(0, 0, 1600, 1067); // shot one stop under, on purpose
   const original = await toBlob(c, 'image/jpeg', .9);
   const thumb = await toBlob(rasterize(c, 480, 320), 'image/jpeg', .8);
-  return { id: 'sample', fileName: lang === 'es' ? 'ejemplo-atardecer.jpg' : 'sample-sunset.jpg', mime: 'image/jpeg', width: 1600, height: 1067,
+  return { id: 'sample', fileName: 'sample-sunset.jpg', mime: 'image/jpeg', width: 1600, height: 1067,
     addedAt: now(), updatedAt: now(), hasEdit: false, thumb, original, sample: true };
 }
 
@@ -1329,7 +1324,7 @@ $('#pick').addEventListener('change', async (e) => {
       const thumb = await toBlob(rasterize(img, tw, th), 'image/jpeg', .8);
       done();
       const mime = f.type || (/\.hei[cf]$/i.test(f.name) ? 'image/heic' : 'image/jpeg');
-      await store.put('photos', { id: uid(), fileName: f.name || 'foto.jpg', mime, width: w, height: h,
+      await store.put('photos', { id: uid(), fileName: f.name || 'photo.jpg', mime, width: w, height: h,
         addedAt: now(), updatedAt: now(), hasEdit: false, thumb, original: new Blob([f], { type: mime }) });
     } catch (err) { failed.push(f.name); }
   }
@@ -1352,8 +1347,8 @@ async function openSettings() {
     const render = () => {
       sh.replaceChildren(el('div', { className: 'grabber' }), sheetNav(t('settings'), null, textBtn(t('done'), closeSheet, 'strong')),
         el('div', { className: 'opt' }, [el('p', { className: 'field-label', textContent: t('language') }),
-          seg([[t('langAuto'), 'auto'], ['Español', 'es'], ['English', 'en']], pref('lumora.lang') || 'auto', (v) => {
-            setPref('lumora.lang', v === 'auto' ? null : v); lang = detectLang(); applyI18n(); renderLibrary(); render();
+          seg([['English', 'en'], ['Español', 'es']], lang, (v) => {
+            setPref('lumora.lang', v === 'es' ? 'es' : null); lang = detectLang(); applyI18n(); renderLibrary(); render();
           }, t('language'))]),
         el('div', { className: 'opt' }, [el('p', { className: 'field-label', textContent: t('appearance') }),
           seg([[t('themeAuto'), 'auto'], [t('light'), 'light'], [t('dark'), 'dark']], pref('lumora.theme') || 'auto', (v) => {

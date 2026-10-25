@@ -15,6 +15,6 @@ Live: https://whitemex956.github.io/Lumora/ (open in Safari, Share > Add to Home
 - Keyboard (iPad, desktop): 1-4 tabs, [ ] previous/next tool, + - 0 zoom, B split view, hold Space for the original.
 - Library: favourites, "Continue editing", filters, multi-select (favourite, paste adjustments, delete).
 - Export sheet with live preview, output resolution, estimated then real file size, quality, and Share / Save to Photos.
-- Spanish and English, light and dark, Reduce Motion and Reduce Transparency respected.
+- English by default on every device; Spanish can be chosen in Settings. Light and dark, Reduce Motion and Reduce Transparency respected.
 
 Storage is unchanged and backward compatible: IndexedDB database `revelado` (v2) with `photos`, `edits` and `presets`. 2.0 only adds an optional `favorite` field to photo records.
