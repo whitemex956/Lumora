@@ -1,14 +1,14 @@
 {
   "name": "Lumora",
   "short_name": "Lumora",
-  "description": "Light. Tone. Precision. A local photo editor: no account, no cloud.",
+  "description": "Light. Tone. Precision. A private photo editor: no account, no cloud.",
   "lang": "en",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#0b0c0f",
-  "theme_color": "#0b0c0f",
+  "orientation": "any",
+  "background_color": "#08090C",
+  "theme_color": "#08090C",
   "icons": [
     {
       "src": "icon-192.png",
