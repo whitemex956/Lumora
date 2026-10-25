@@ -1322,13 +1322,20 @@ $('#pick').addEventListener('change', async (e) => {
     if (!isAccepted(f)) { failed.push(f.name); continue; }
     try {
       const { img, done } = await decode(f);
-      const w = img.naturalWidth, h = img.naturalHeight;
+      let w = img.naturalWidth, h = img.naturalHeight;
       const [tw, th] = fit(w, h, 480, Infinity);
       const thumb = await toBlob(rasterize(img, tw, th), 'image/jpeg', .8);
+      let mime = f.type || (/\.hei[cf]$/i.test(f.name) ? 'image/heic' : /\.png$/i.test(f.name) ? 'image/png' : 'image/jpeg');
+      let name = f.name || 'photo.jpg', original = new Blob([f], { type: mime });
+      if (/png/i.test(mime)) {   // PNG becomes a JPG on import: transparent areas white, full size (within Safari's canvas limit)
+        [w, h] = fit(w, h, 16384, EXPORT_PX);
+        const c = rasterize(img, w, h);
+        original = await toBlob(c, 'image/jpeg', .95); c.width = c.height = 0;
+        mime = 'image/jpeg'; name = name.replace(/\.png$/i, '') + '.jpg';
+      }
       done();
-      const mime = f.type || (/\.hei[cf]$/i.test(f.name) ? 'image/heic' : /\.png$/i.test(f.name) ? 'image/png' : 'image/jpeg');
-      await store.put('photos', { id: uid(), fileName: f.name || 'photo.jpg', mime, width: w, height: h,
-        addedAt: now(), updatedAt: now(), hasEdit: false, thumb, original: new Blob([f], { type: mime }) });
+      await store.put('photos', { id: uid(), fileName: name, mime, width: w, height: h,
+        addedAt: now(), updatedAt: now(), hasEdit: false, thumb, original });
     } catch (err) { failed.push(f.name); }
   }
   toast(failed.length ? t('addFail', failed.join(', ')) : t('added', files.length), failed.length ? 5000 : 2000, failed.length ? 'err' : 'ok');
