@@ -3559,7 +3559,7 @@ function heroDone(hero) {
 async function openEditor(p, fromImg) {
   if (state.selecting) return;
   const hero = heroFrom(fromImg);
-  state.photo = p; state.changed = false; state.autoPrev = null; state.recommended = null; state.split.on = false; state.orig = false; placeSplit();
+  state.photo = p; state.changed = false; state.autoPrev = null; state.recommended = null; state.lookCat = 'recommended'; state.split.on = false; state.orig = false; placeSplit();
   const edit = p.sample ? null : await store.get('edits', p.id);
   state.settings = fromStored(edit && edit.settings);
   resetHistory(); state.src = null; zoom.s = 1; zoom.x = zoom.y = 0; clip.style.transform = '';
