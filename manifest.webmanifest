@@ -1,8 +1,8 @@
 {
   "name": "Lumora",
   "short_name": "Lumora",
-  "description": "Light. Tone. Precision. Editor de fotos local, sin cuenta y sin nube.",
-  "lang": "es",
+  "description": "Light. Tone. Precision. A local photo editor: no account, no cloud.",
+  "lang": "en",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

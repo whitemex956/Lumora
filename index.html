@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
@@ -267,6 +267,11 @@ svg.i { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-widt
 .sheet-nav .btn-text.left { justify-self: start; margin-left: -8px; margin-right: 0; }
 .sheet-nav .btn-text.strong { font-weight: 600; }
 
+.lang { display: inline-flex; align-items: center; min-height: 44px; padding: 0 2px; margin-left: -2px;
+  font-size: 13px; font-weight: 600; letter-spacing: .08em; color: var(--text-muted); }
+.lang .bar { margin: 0 6px; opacity: .5; font-weight: 400; }
+.lang .on { color: var(--text); }
+
 /* sheets */
 .scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 20; }
 .sheet { position: fixed; left: 0; right: 0; bottom: 0; z-index: 21; }
@@ -298,13 +303,13 @@ svg.i { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-widt
   font-size: 15px; line-height: 20px; }
 </style>
 
-<section id="library" class="view" aria-label="Fotos">
+<section id="library" class="view" data-i18n-aria="lib.aria" aria-label="Photos">
   <header class="nav">
     <div class="nav-row">
-      <span></span>
+      <button id="langBtn" class="lang" type="button"><span data-l="en" class="on">EN</span><span class="bar" aria-hidden="true">|</span><span data-l="es">ES</span></button>
       <div class="nav-actions">
-      <button id="selectBtn" class="btn-text" type="button" hidden>Seleccionar</button>
-      <label class="nav-btn" for="pick" aria-label="Añadir fotos" role="button" tabindex="0">
+      <button id="selectBtn" class="btn-text" type="button" hidden data-i18n="sel.select">Select</button>
+      <label class="nav-btn" for="pick" data-i18n-aria="lib.add" aria-label="Add photos" role="button" tabindex="0">
         <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
       </label>
       </div>
@@ -321,39 +326,39 @@ svg.i { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-widt
       </svg>
     </h1>
     <p class="tagline">Light. Tone. Precision.</p>
-    <p id="libNotice" class="footnote">JPG y HEIC · solo en este iPhone</p>
+    <p id="libNotice" class="footnote">JPG and HEIC · only on this iPhone</p>
   </header>
   <div id="grid" class="grid"></div>
   <div id="selectBar" class="select-bar" hidden>
-    <span id="selCount" class="footnote">Toca las fotos a las que quieres pegar los ajustes</span>
-    <button id="pasteSelBtn" class="btn-fill" type="button" disabled>Pegar ajustes</button>
+    <span id="selCount" class="footnote"></span>
+    <button id="pasteSelBtn" class="btn-fill" type="button" disabled data-i18n="sel.paste">Paste adjustments</button>
   </div>
 </section>
 
-<section id="editor" class="view" aria-label="Editor" hidden>
+<section id="editor" class="view" data-i18n-aria="ed.aria" aria-label="Editor" hidden>
   <header class="nav">
     <div class="nav-row">
       <button id="back" class="nav-btn text" type="button">
-        <svg class="i" viewBox="0 0 24 24" aria-hidden="true" style="stroke-width:2.4"><path d="m15 5-7 7 7 7"/></svg>Fotos
+        <svg class="i" viewBox="0 0 24 24" aria-hidden="true" style="stroke-width:2.4"><path d="m15 5-7 7 7 7"/></svg><span data-i18n="ed.back">Photos</span>
       </button>
       <div class="nav-actions">
-        <button id="undoBtn" class="nav-btn" type="button" aria-label="Deshacer" disabled>
+        <button id="undoBtn" class="nav-btn" type="button" data-i18n-aria="ed.undo" aria-label="Undo" disabled>
           <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>
         </button>
-        <button id="redoBtn" class="nav-btn" type="button" aria-label="Rehacer" disabled>
+        <button id="redoBtn" class="nav-btn" type="button" data-i18n-aria="ed.redo" aria-label="Redo" disabled>
           <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg>
         </button>
-        <button id="moreBtn" class="nav-btn" type="button" aria-label="Más opciones">
+        <button id="moreBtn" class="nav-btn" type="button" data-i18n-aria="ed.more" aria-label="More options">
           <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><circle cx="7.6" cy="12" r=".9" fill="currentColor"/><circle cx="12" cy="12" r=".9" fill="currentColor"/><circle cx="16.4" cy="12" r=".9" fill="currentColor"/></svg>
         </button>
-        <button id="exportBtn" class="nav-btn" type="button" aria-label="Exportar">
+        <button id="exportBtn" class="nav-btn" type="button" data-i18n-aria="ed.export" aria-label="Export">
           <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5v11"/><path d="m8 7.5 4-4 4 4"/><path d="M8.5 10.5H6.5a1.5 1.5 0 0 0-1.5 1.5v7a1.5 1.5 0 0 0 1.5 1.5h11a1.5 1.5 0 0 0 1.5-1.5v-7a1.5 1.5 0 0 0-1.5-1.5h-2"/></svg>
         </button>
       </div>
     </div>
   </header>
   <div id="stage" class="stage">
-    <div id="clip" class="clip"><canvas id="view" aria-label="Foto en edición"></canvas></div>
+    <div id="clip" class="clip"><canvas id="view" data-i18n-aria="ed.canvas" aria-label="Photo being edited"></canvas></div>
     <div id="cropFrame" class="crop-frame" hidden aria-hidden="true">
       <div class="grid3"></div>
       <span class="h nw" data-h="nw"></span><span class="h ne" data-h="ne"></span>
@@ -361,38 +366,38 @@ svg.i { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-widt
       <span class="e n" data-h="n"></span><span class="e s" data-h="s"></span>
       <span class="e ee" data-h="e"></span><span class="e w" data-h="w"></span>
     </div>
-    <span id="origBadge" class="badge" hidden>Antes</span>
-    <span id="loading" class="loading" hidden>Abriendo…</span>
+    <span id="origBadge" class="badge" hidden data-i18n="ed.before">Before</span>
+    <span id="loading" class="loading" hidden data-i18n="ed.opening">Opening…</span>
   </div>
   <div class="controls">
-    <p id="adjName" class="adj-name">Exposición</p>
+    <p id="adjName" class="adj-name">Exposure</p>
     <p id="adjValue" class="adj-value" aria-hidden="true">0</p>
     <canvas id="ruler" class="ruler" role="slider" tabindex="0" aria-labelledby="adjName"></canvas>
     <span id="scale" class="scale none" aria-hidden="true"></span>
     <div id="adjRow" class="adj-row"></div>
     <div id="cropRow" class="crop-row" hidden>
-      <button id="rotBtn" class="tool" type="button" aria-label="Girar 90° a la izquierda">
+      <button id="rotBtn" class="tool" type="button" data-i18n-aria="crop.rotate" aria-label="Rotate 90° left">
         <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9"/><path d="M4.5 4.5V9H9"/></svg>
       </button>
-      <button id="flipBtn" class="tool" type="button" aria-label="Voltear en horizontal">
+      <button id="flipBtn" class="tool" type="button" data-i18n-aria="crop.flip" aria-label="Flip horizontally">
         <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18" stroke-dasharray="2 2.5"/><path d="M9 7 4 17h5z"/><path d="M15 7l5 10h-5z"/></svg>
       </button>
       <span class="vsep" aria-hidden="true"></span>
-      <div id="chips" role="group" aria-label="Proporción" style="display:flex;gap:8px"></div>
+      <div id="chips" role="group" data-i18n-aria="crop.ratio" aria-label="Aspect ratio" style="display:flex;gap:8px"></div>
       <span class="vsep" aria-hidden="true"></span>
-      <button id="cropReset" class="btn-text" type="button">Restablecer</button>
+      <button id="cropReset" class="btn-text" type="button" data-i18n="crop.reset">Reset</button>
     </div>
     <div id="presetRow" class="preset-row" hidden role="group" aria-label="Presets"></div>
   </div>
-  <nav class="modebar" role="tablist" aria-label="Modo de edición">
+  <nav class="modebar" role="tablist" data-i18n-aria="mode.aria" aria-label="Editing mode">
     <button id="mode-adjust" class="mode" role="tab" type="button" aria-selected="true">
-      <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>Ajustar
+      <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg><span data-i18n="mode.adjust">Adjust</span>
     </button>
     <button id="mode-presets" class="mode" role="tab" type="button" aria-selected="false">
-      <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="7.5" width="13" height="13" rx="2.5"/><path d="M7.5 4.5h10a2.5 2.5 0 0 1 2.5 2.5v10"/></svg>Presets
+      <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="7.5" width="13" height="13" rx="2.5"/><path d="M7.5 4.5h10a2.5 2.5 0 0 1 2.5 2.5v10"/></svg><span data-i18n="mode.presets">Presets</span>
     </button>
     <button id="mode-crop" class="mode" role="tab" type="button" aria-selected="false">
-      <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v14h14"/><path d="M3 7h14v14"/></svg>Recortar
+      <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3v14h14"/><path d="M3 7h14v14"/></svg><span data-i18n="mode.crop">Crop</span>
     </button>
   </nav>
 </section>
@@ -412,30 +417,151 @@ svg.i { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-widt
 const $ = (s) => document.querySelector(s);
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : 'id-' + Date.now().toString(36) + Math.random().toString(36).slice(2));
 const now = () => new Date().toISOString();
+/* ---------- language: English by default, Spanish on the EN | ES switch ---------- */
+const I18N = {
+  en: {
+    'lib.aria': 'Photos', 'lib.add': 'Add photos', 'lib.notice': 'JPG and HEIC · only on this iPhone',
+    'lib.count.one': '1 photo · only on this iPhone', 'lib.count.many': '{n} photos · only on this iPhone',
+    'lib.volatile': "This browser won't let Lumora save here: your photos and edits will be lost when you close it.",
+    'lang.aria': 'Language: English. Tap for Spanish',
+    'sel.select': 'Select', 'sel.cancel': 'Cancel', 'sel.paste': 'Paste adjustments',
+    'sel.hint': 'Tap the photos you want to paste the adjustments onto',
+    'sel.needCopy': 'First copy adjustments from a photo (••• › Copy adjustments)',
+    'sel.one': '1 photo selected', 'sel.many': '{n} photos selected',
+    'empty.title': 'Start with a photo', 'empty.body': "Pick JPG or HEIC photos from your camera roll. They're edited here, with no account and no cloud.",
+    'empty.add': 'Add photos', 'empty.try': 'Try the sample photo', 'tile.edited': ', edited',
+    'add.one': 'Adding…', 'add.progress': 'Adding {i} of {n}…', 'add.failed': "Couldn't open: {names}. Only JPG and HEIC for now.",
+    'add.doneOne': 'Photo added', 'add.doneMany': '{n} photos added',
+    'ed.aria': 'Editor', 'ed.back': 'Photos', 'ed.undo': 'Undo', 'ed.redo': 'Redo', 'ed.more': 'More options', 'ed.export': 'Export',
+    'ed.canvas': 'Photo being edited', 'ed.before': 'Before', 'ed.opening': 'Opening…',
+    'hint.hold': 'Press and hold the photo to see the before', 'err.webgl': "This browser can't show the edit (WebGL2 is missing).",
+    'err.open': "This photo couldn't be opened.", 'auto.fail': "Auto couldn't analyse this photo.",
+    'adj.group': 'Adjustments', 'adj.auto': 'Auto',
+    'adj.exposure': 'Exposure', 'adj.contrast': 'Contrast', 'adj.highlights': 'Highlights', 'adj.shadows': 'Shadows',
+    'adj.whites': 'Whites', 'adj.blacks': 'Blacks', 'adj.temp': 'Temperature', 'adj.tint': 'Tint',
+    'adj.vibrance': 'Vibrance', 'adj.saturation': 'Saturation', 'adj.angle': 'Straighten', 'adj.amount': 'Amount',
+    'mode.aria': 'Editing mode', 'mode.adjust': 'Adjust', 'mode.presets': 'Presets', 'mode.crop': 'Crop',
+    'crop.rotate': 'Rotate 90° left', 'crop.flip': 'Flip horizontally', 'crop.ratio': 'Aspect ratio', 'crop.reset': 'Reset',
+    'crop.free': 'Free', 'crop.original': 'Original',
+    'preset.b-natural': 'Natural', 'preset.b-luminoso': 'Bright', 'preset.b-aurora': 'Aurora', 'preset.b-calido': 'Warm',
+    'preset.b-frio': 'Cool', 'preset.b-mate': 'Matte', 'preset.b-pelicula': 'Film', 'preset.b-intenso': 'Punchy',
+    'preset.b-bn-suave': 'Soft B&W', 'preset.b-bn-fuerte': 'Strong B&W',
+    'presets.none': 'None', 'presets.noneAria': 'No preset', 'presets.tile': 'Preset {name}', 'presets.choose': 'Choose a preset',
+    'presets.amountOf': 'Amount · {name}', 'presets.add': 'Save', 'presets.addAria': 'Save as preset',
+    'savep.title': 'New preset', 'savep.default': 'My preset {n}', 'savep.name': 'Name', 'savep.save': 'Save', 'cancel': 'Cancel', 'close': 'Close',
+    'group.light': 'Light', 'group.lightHint': 'Exposure, contrast, highlights, shadows, whites, blacks',
+    'group.color': 'Color', 'group.colorHint': 'Temperature, tint, vibrance, saturation',
+    'group.preset': 'Preset', 'group.crop': 'Crop', 'group.cropHint': 'Framing, straighten, rotation',
+    'savep.note': "Saves this photo's values, including any preset applied. Crop isn't included.",
+    'savep.empty': 'Nothing to save in those groups. Move an adjustment first.', 'savep.saved': 'Preset “{name}” saved',
+    'delp.note': 'Photos that use it go back to their own adjustments.', 'delp.btn': 'Delete preset', 'delp.done': 'Preset “{name}” deleted',
+    'copy.title': 'Copy adjustments', 'copy.note': 'Then paste them from ••• on another photo, or onto several at once from the library with “Select”.',
+    'copy.none': 'Choose at least one group.', 'copy.done': 'Adjustments copied',
+    'paste.title': 'Paste adjustments', 'paste.done': 'Adjustments pasted', 'paste.progress': 'Pasting {i} of {n}…',
+    'paste.partial': "Pasted onto {ok}; {failed} couldn't be processed.", 'paste.one': 'Adjustments pasted onto 1 photo',
+    'paste.many': 'Adjustments pasted onto {n} photos',
+    'more.remove': 'Remove from Lumora', 'more.removed': 'Removed from Lumora. The original is still in your camera roll.',
+    'export.title': 'Export', 'export.size': 'Size (long edge, in pixels)', 'export.max': 'Maximum', 'export.quality': 'JPG quality',
+    'q.high': 'High', 'q.medium': 'Medium', 'q.light': 'Light', 'export.go': 'Export photo', 'export.note': 'No location or camera data.',
+    'export.preparing': 'Preparing the photo…', 'export.fail': "Couldn't export. Close other apps and try again.", 'export.alt': 'Exported photo',
+    'export.facts': '{w} × {h} · {mp} · JPG · {size} · no location', 'export.save': 'Save to Photos or share',
+    'export.shareFail': 'The share menu didn’t open. Press and hold the image and choose “Save to Photos”.',
+    'export.hintShare': 'Choose “Save Image” to put it in Photos, or press and hold the image.',
+    'export.hintHold': 'Press and hold the image and choose “Save to Photos”.', 'export.reduced': ' Reduced to 16 MP because of Safari’s memory limit.',
+    'file.sample': 'sample-sunset.jpg', 'file.default': 'photo',
+  },
+  es: {
+    'lib.aria': 'Fotos', 'lib.add': 'Añadir fotos', 'lib.notice': 'JPG y HEIC · solo en este iPhone',
+    'lib.count.one': '1 foto · solo en este iPhone', 'lib.count.many': '{n} fotos · solo en este iPhone',
+    'lib.volatile': 'Este navegador no deja guardar datos aquí: tus fotos y ediciones se perderán al cerrar.',
+    'lang.aria': 'Idioma: español. Toca para inglés',
+    'sel.select': 'Seleccionar', 'sel.cancel': 'Cancelar', 'sel.paste': 'Pegar ajustes',
+    'sel.hint': 'Toca las fotos a las que quieres pegar los ajustes',
+    'sel.needCopy': 'Primero copia ajustes desde una foto (••• › Copiar ajustes)',
+    'sel.one': '1 foto seleccionada', 'sel.many': '{n} fotos seleccionadas',
+    'empty.title': 'Empieza con una foto', 'empty.body': 'Elige JPG o HEIC de tu carrete. Se editan aquí, sin cuenta y sin nube.',
+    'empty.add': 'Añadir fotos', 'empty.try': 'Probar con la foto de ejemplo', 'tile.edited': ', editada',
+    'add.one': 'Añadiendo…', 'add.progress': 'Añadiendo {i} de {n}…', 'add.failed': 'No se pudo abrir: {names}. Por ahora solo JPG y HEIC.',
+    'add.doneOne': 'Foto añadida', 'add.doneMany': '{n} fotos añadidas',
+    'ed.aria': 'Editor', 'ed.back': 'Fotos', 'ed.undo': 'Deshacer', 'ed.redo': 'Rehacer', 'ed.more': 'Más opciones', 'ed.export': 'Exportar',
+    'ed.canvas': 'Foto en edición', 'ed.before': 'Antes', 'ed.opening': 'Abriendo…',
+    'hint.hold': 'Mantén pulsada la foto para ver el antes', 'err.webgl': 'Este navegador no puede mostrar la edición (falta WebGL2).',
+    'err.open': 'Esta foto no se pudo abrir.', 'auto.fail': 'Auto no pudo analizar esta foto.',
+    'adj.group': 'Ajustes', 'adj.auto': 'Auto',
+    'adj.exposure': 'Exposición', 'adj.contrast': 'Contraste', 'adj.highlights': 'Altas luces', 'adj.shadows': 'Sombras',
+    'adj.whites': 'Blancos', 'adj.blacks': 'Negros', 'adj.temp': 'Temperatura', 'adj.tint': 'Matiz',
+    'adj.vibrance': 'Intensidad', 'adj.saturation': 'Saturación', 'adj.angle': 'Enderezar', 'adj.amount': 'Cantidad',
+    'mode.aria': 'Modo de edición', 'mode.adjust': 'Ajustar', 'mode.presets': 'Presets', 'mode.crop': 'Recortar',
+    'crop.rotate': 'Girar 90° a la izquierda', 'crop.flip': 'Voltear en horizontal', 'crop.ratio': 'Proporción', 'crop.reset': 'Restablecer',
+    'crop.free': 'Libre', 'crop.original': 'Original',
+    'preset.b-natural': 'Natural', 'preset.b-luminoso': 'Luminoso', 'preset.b-aurora': 'Aurora', 'preset.b-calido': 'Cálido',
+    'preset.b-frio': 'Frío', 'preset.b-mate': 'Mate', 'preset.b-pelicula': 'Película', 'preset.b-intenso': 'Intenso',
+    'preset.b-bn-suave': 'B/N suave', 'preset.b-bn-fuerte': 'B/N fuerte',
+    'presets.none': 'Ninguno', 'presets.noneAria': 'Sin preset', 'presets.tile': 'Preset {name}', 'presets.choose': 'Elige un preset',
+    'presets.amountOf': 'Cantidad · {name}', 'presets.add': 'Guardar', 'presets.addAria': 'Guardar como preset',
+    'savep.title': 'Nuevo preset', 'savep.default': 'Mi preset {n}', 'savep.name': 'Nombre', 'savep.save': 'Guardar', 'cancel': 'Cancelar', 'close': 'Cerrar',
+    'group.light': 'Luz', 'group.lightHint': 'Exposición, contraste, altas luces, sombras, blancos, negros',
+    'group.color': 'Color', 'group.colorHint': 'Temperatura, matiz, intensidad, saturación',
+    'group.preset': 'Preset', 'group.crop': 'Recorte', 'group.cropHint': 'Encuadre, enderezado, giro',
+    'savep.note': 'Guarda los valores de esta foto, con el preset que tenga aplicado. El recorte no se incluye.',
+    'savep.empty': 'No hay ajustes que guardar en esos grupos. Mueve alguno primero.', 'savep.saved': 'Preset «{name}» guardado',
+    'delp.note': 'Las fotos que lo usan vuelven a sus ajustes propios.', 'delp.btn': 'Borrar preset', 'delp.done': 'Preset «{name}» borrado',
+    'copy.title': 'Copiar ajustes', 'copy.note': 'Luego pégalos desde ••• en otra foto, o en varias a la vez desde la biblioteca con «Seleccionar».',
+    'copy.none': 'Elige al menos un grupo.', 'copy.done': 'Ajustes copiados',
+    'paste.title': 'Pegar ajustes', 'paste.done': 'Ajustes pegados', 'paste.progress': 'Pegando {i} de {n}…',
+    'paste.partial': 'Pegado en {ok}; {failed} no se pudieron procesar.', 'paste.one': 'Ajustes pegados en 1 foto',
+    'paste.many': 'Ajustes pegados en {n} fotos',
+    'more.remove': 'Quitar de Lumora', 'more.removed': 'Quitada de Lumora. La original sigue en tu carrete.',
+    'export.title': 'Exportar', 'export.size': 'Tamaño (lado largo, en píxeles)', 'export.max': 'Máximo', 'export.quality': 'Calidad JPG',
+    'q.high': 'Alta', 'q.medium': 'Media', 'q.light': 'Ligera', 'export.go': 'Exportar foto', 'export.note': 'Sin ubicación ni datos de la cámara.',
+    'export.preparing': 'Preparando la foto…', 'export.fail': 'No se pudo exportar. Cierra otras apps y vuelve a intentarlo.', 'export.alt': 'Foto exportada',
+    'export.facts': '{w} × {h} · {mp} · JPG · {size} · sin ubicación', 'export.save': 'Guardar en Fotos o compartir',
+    'export.shareFail': 'No se abrió el menú de compartir. Mantén pulsada la imagen y elige «Guardar en Fotos».',
+    'export.hintShare': 'Elige «Guardar imagen» para llevarla a Fotos, o mantén pulsada la imagen.',
+    'export.hintHold': 'Mantén pulsada la imagen y elige «Guardar en Fotos».', 'export.reduced': ' Reducida a 16 MP por el límite de memoria de Safari.',
+    'file.sample': 'ejemplo-atardecer.jpg', 'file.default': 'foto',
+  },
+};
+let LANG = (() => { try { return localStorage.getItem('lumora.lang') === 'es' ? 'es' : 'en'; } catch (e) { return 'en'; } })();
+function t(key, vars = {}) {
+  let out = (I18N[LANG] && I18N[LANG][key]) ?? I18N.en[key] ?? key;
+  for (const [k, v] of Object.entries(vars)) out = out.split('{' + k + '}').join(String(v));
+  return out;
+}
+function applyStatic() {
+  document.documentElement.lang = LANG;
+  for (const n of document.querySelectorAll('[data-i18n]')) n.textContent = t(n.dataset.i18n);
+  for (const n of document.querySelectorAll('[data-i18n-aria]')) n.setAttribute('aria-label', t(n.dataset.i18nAria));
+  const lb = document.getElementById('langBtn');
+  if (lb) {
+    lb.setAttribute('aria-label', t('lang.aria'));
+    for (const sp of lb.querySelectorAll('[data-l]')) sp.classList.toggle('on', sp.dataset.l === LANG);
+  }
+}
 const reduceMotion = () => window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 /* every adjustment, in row order. group = where it is stored (schema: settings.light / settings.color).
    glyph = our own icon drawing (24 x 24 grid). */
 const SLIDERS = [
-  { key: 'exposure', group: 'light', label: 'Exposición', min: -4, max: 4, step: 0.05,
+  { key: 'exposure', group: 'light', min: -4, max: 4, step: 0.05,
     glyph: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/>' },
-  { key: 'contrast', group: 'light', label: 'Contraste', min: -100, max: 100, step: 1,
+  { key: 'contrast', group: 'light', min: -100, max: 100, step: 1,
     glyph: '<circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/>' },
-  { key: 'highlights', group: 'light', label: 'Altas luces', min: -100, max: 100, step: 1,
+  { key: 'highlights', group: 'light', min: -100, max: 100, step: 1,
     glyph: '<circle cx="12" cy="12" r="8"/><path d="M4 12a8 8 0 0 1 16 0z" fill="currentColor"/>' },
-  { key: 'shadows', group: 'light', label: 'Sombras', min: -100, max: 100, step: 1,
+  { key: 'shadows', group: 'light', min: -100, max: 100, step: 1,
     glyph: '<circle cx="12" cy="12" r="8"/><path d="M4 12a8 8 0 0 0 16 0z" fill="currentColor"/>' },
-  { key: 'whites', group: 'light', label: 'Blancos', min: -100, max: 100, step: 1,
+  { key: 'whites', group: 'light', min: -100, max: 100, step: 1,
     glyph: '<circle cx="12" cy="12" r="7" fill="currentColor"/>' },
-  { key: 'blacks', group: 'light', label: 'Negros', min: -100, max: 100, step: 1,
+  { key: 'blacks', group: 'light', min: -100, max: 100, step: 1,
     glyph: '<circle cx="12" cy="12" r="6" style="stroke-width:3.6"/>' },
-  { key: 'temp', group: 'color', label: 'Temperatura', min: -100, max: 100, step: 1, scale: 'temp',
+  { key: 'temp', group: 'color', min: -100, max: 100, step: 1, scale: 'temp',
     glyph: '<path d="M10 14V5a2 2 0 0 1 4 0v9a4 4 0 1 1-4 0z"/><path d="M12 10v6"/>' },
-  { key: 'tint', group: 'color', label: 'Matiz', min: -100, max: 100, step: 1, scale: 'tint',
+  { key: 'tint', group: 'color', min: -100, max: 100, step: 1, scale: 'tint',
     glyph: '<circle cx="12" cy="12" r="8"/><path d="M17.66 6.34A8 8 0 0 1 6.34 17.66z" fill="currentColor"/>' },
-  { key: 'vibrance', group: 'color', label: 'Intensidad', min: -100, max: 100, step: 1,
+  { key: 'vibrance', group: 'color', min: -100, max: 100, step: 1,
     glyph: '<path d="M12 3.5c-3 4-6 7.3-6 10.5a6 6 0 0 0 12 0c0-3.2-3-6.5-6-10.5z"/>' },
-  { key: 'saturation', group: 'color', label: 'Saturación', min: -100, max: 100, step: 1,
+  { key: 'saturation', group: 'color', min: -100, max: 100, step: 1,
     glyph: '<circle cx="12" cy="8.6" r="4.4"/><circle cx="8.4" cy="14.6" r="4.4"/><circle cx="15.6" cy="14.6" r="4.4"/>' },
 ];
 const BY_KEY = Object.fromEntries(SLIDERS.map((d) => [d.key, d]));
@@ -443,24 +569,26 @@ const DEFAULTS = Object.fromEntries(SLIDERS.map((s) => [s.key, 0]));
 /* crop, in the oriented image (after flip, then rot): centre and size as fractions
    of its width and height; angle = straighten in degrees; aspect = w / h or null (free) */
 const DEFAULT_CROP = { cx: 0, cy: 0, w: 1, h: 1, angle: 0, rot: 0, flip: false, aspect: null };
-const ANGLE = { key: 'angle', label: 'Enderezar', min: -45, max: 45, step: 0.1, ticks: 90, majorStep: 15 };
-const RATIOS = [['Libre', null], ['Original', 'orig'], ['1:1', 1], ['4:5', 4 / 5], ['5:4', 5 / 4], ['3:2', 3 / 2], ['2:3', 2 / 3], ['16:9', 16 / 9], ['9:16', 9 / 16]];
+const ANGLE = { key: 'angle', min: -45, max: 45, step: 0.1, ticks: 90, majorStep: 15 };
+const RATIOS = [['crop.free', null], ['crop.original', 'orig'], ['1:1', 1], ['4:5', 4 / 5], ['5:4', 5 / 4], ['3:2', 3 / 2], ['2:3', 2 / 3], ['16:9', 16 / 9], ['9:16', 9 / 16]];
 const clone = (s) => ({ ...s, crop: { ...s.crop }, preset: s.preset ? { ...s.preset } : null });
-const AMOUNT = { key: 'amount', label: 'Cantidad', min: 0, max: 200, step: 1, ticks: 80, majorStep: 50, ref: 100 };
+const AMOUNT = { key: 'amount', min: 0, max: 200, step: 1, ticks: 80, majorStep: 50, ref: 100 };
 /* Lumora's own built-in presets: values are added on top of the photo's own adjustments,
    scaled by Cantidad (100 = as designed). Names and values are ours. */
 const BUILTIN_PRESETS = [
-  { id: 'b-natural',   name: 'Natural',   values: { contrast: 8, highlights: -15, shadows: 10, vibrance: 15 } },
-  { id: 'b-luminoso',  name: 'Luminoso',  values: { exposure: 0.3, highlights: -20, shadows: 25, whites: 10, vibrance: 10 } },
-  { id: 'b-aurora',    name: 'Aurora',    values: { temp: -8, tint: 12, highlights: -20, shadows: 15, vibrance: 20 } },
-  { id: 'b-calido',    name: 'Cálido',    values: { temp: 25, tint: 4, contrast: 5, vibrance: 10 } },
-  { id: 'b-frio',      name: 'Frío',      values: { temp: -22, tint: -3, contrast: 8, saturation: -5 } },
-  { id: 'b-mate',      name: 'Mate',      values: { contrast: -15, highlights: -10, blacks: 30, saturation: -10 } },
-  { id: 'b-pelicula',  name: 'Película',  values: { temp: 8, highlights: -25, blacks: 25, saturation: -15, contrast: 6 } },
-  { id: 'b-intenso',   name: 'Intenso',   values: { contrast: 35, whites: 15, blacks: -20, vibrance: 8 } },
-  { id: 'b-bn-suave',  name: 'B/N suave', values: { saturation: -100, contrast: 15, shadows: 10 } },
-  { id: 'b-bn-fuerte', name: 'B/N fuerte', values: { saturation: -100, contrast: 45, whites: 20, blacks: -20 } },
+  { id: 'b-natural', values: { contrast: 8, highlights: -15, shadows: 10, vibrance: 15 } },
+  { id: 'b-luminoso', values: { exposure: 0.3, highlights: -20, shadows: 25, whites: 10, vibrance: 10 } },
+  { id: 'b-aurora', values: { temp: -8, tint: 12, highlights: -20, shadows: 15, vibrance: 20 } },
+  { id: 'b-calido', values: { temp: 25, tint: 4, contrast: 5, vibrance: 10 } },
+  { id: 'b-frio', values: { temp: -22, tint: -3, contrast: 8, saturation: -5 } },
+  { id: 'b-mate', values: { contrast: -15, highlights: -10, blacks: 30, saturation: -10 } },
+  { id: 'b-pelicula', values: { temp: 8, highlights: -25, blacks: 25, saturation: -15, contrast: 6 } },
+  { id: 'b-intenso', values: { contrast: 35, whites: 15, blacks: -20, vibrance: 8 } },
+  { id: 'b-bn-suave', values: { saturation: -100, contrast: 15, shadows: 10 } },
+  { id: 'b-bn-fuerte', values: { saturation: -100, contrast: 45, whites: 20, blacks: -20 } },
 ];
+const adjLabel = (key) => t('adj.' + key);
+const presetName = (pr) => (pr.id.startsWith('b-') ? t('preset.' + pr.id) : pr.name);
 const presetById = (id) => BUILTIN_PRESETS.find((x) => x.id === id) || state.userPresets.find((x) => x.id === id) || null;
 // what the renderer sees: the photo's own values plus the preset, scaled by its amount
 function effective(s) {
@@ -563,8 +691,8 @@ function rasterize(src, w, h) {
 }
 const toBlob = (c, type, q) => new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('encode'))), type, q));
 const isAccepted = (f) => /^image\/(jpeg|heic|heif)$/i.test(f.type) || /\.(jpe?g|heic|heif)$/i.test(f.name || '');
-const baseName = (n) => (n || 'foto').replace(/\.[^.]+$/, '');
-const decimal = (v, d) => Math.abs(v).toFixed(d).replace('.', ',');
+const baseName = (n) => (n || t('file.default')).replace(/\.[^.]+$/, '');
+const decimal = (v, d) => Math.abs(v).toFixed(d).replace('.', LANG === 'es' ? ',' : '.');
 const megapixels = (w, h) => decimal(w * h / 1e6, 1) + ' MP';
 const fileSize = (b) => b < 1048576 ? Math.round(b / 1024) + ' KB' : decimal(b / 1048576, 1) + ' MB';
 
@@ -690,7 +818,7 @@ function closeSheet() {
 $('#scrim').addEventListener('click', closeSheet);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#sheet').hidden) closeSheet(); });
 const sign = (v) => (v > 0 ? '+' : v < 0 ? '−' : '');
-const fmtValue = (key, v) => key === 'exposure' ? sign(v) + decimal(v, 2) + ' EV' : key === 'angle' ? sign(v) + decimal(v, 1) + '°' : key === 'amount' ? decimal(v, 0) + ' %' : sign(v) + decimal(v, 0);
+const fmtValue = (key, v) => key === 'exposure' ? sign(v) + decimal(v, 2) + ' EV' : key === 'angle' ? sign(v) + decimal(v, 1) + '°' : key === 'amount' ? decimal(v, 0) + (LANG === 'es' ? ' %' : '%') : sign(v) + decimal(v, 0);
 function once(key) { try { if (localStorage.getItem(key)) return false; localStorage.setItem(key, '1'); return true; } catch (e) { return false; } }
 
 /* ---------- sample photo (offered when the library is empty; never saved) ---------- */
@@ -710,7 +838,7 @@ async function makeSample() {
   g.fillStyle = 'rgba(0,0,0,.38)'; g.fillRect(0, 0, 1600, 1067); // shot one stop under, on purpose
   const original = await toBlob(c, 'image/jpeg', .9);
   const thumb = await toBlob(rasterize(c, 480, 320), 'image/jpeg', .8);
-  return { id: 'sample', fileName: 'ejemplo-atardecer.jpg', mime: 'image/jpeg', width: 1600, height: 1067,
+  return { id: 'sample', fileName: t('file.sample'), mime: 'image/jpeg', width: 1600, height: 1067,
     addedAt: now(), updatedAt: now(), hasEdit: false, thumb, original, sample: true };
 }
 
@@ -723,22 +851,21 @@ async function renderLibrary() {
   const photos = (await store.all('photos')).sort((a, b) => b.addedAt.localeCompare(a.addedAt));
   const notice = $('#libNotice');
   if (store.isVolatile) {
-    notice.textContent = 'Este navegador no deja guardar datos aquí: tus fotos y ediciones se perderán al cerrar.';
+    notice.textContent = t('lib.volatile');
     notice.className = 'footnote warn';
   } else {
-    notice.textContent = photos.length
-      ? `${photos.length} ${photos.length === 1 ? 'foto' : 'fotos'} · solo en este iPhone`
-      : 'JPG y HEIC · solo en este iPhone';
+    notice.className = 'footnote';
+    notice.textContent = !photos.length ? t('lib.notice') : photos.length === 1 ? t('lib.count.one') : t('lib.count.many', { n: photos.length });
   }
   if (!photos.length) {
     $('#selectBtn').hidden = true; if (state.selecting) setSelecting(false);
-    const tryBtn = el('button', { className: 'btn-text', type: 'button', textContent: 'Probar con la foto de ejemplo' });
+    const tryBtn = el('button', { className: 'btn-text', type: 'button', textContent: t('empty.try') });
     tryBtn.addEventListener('click', async () => { if (!samplePhoto) samplePhoto = await makeSample(); openEditor(samplePhoto); });
     grid.append(el('div', { className: 'empty' }, [
       svg('<rect x="4" y="9" width="40" height="32" rx="5"/><path d="M4 33l11-10 9 8 7-6 13 11"/><circle cx="33" cy="18" r="3.5"/><path d="M12 9V7a3 3 0 0 1 3-3h30a3 3 0 0 1 3 3v24a3 3 0 0 1-3 3h-1"/>', 'i art'),
-      el('h2', { textContent: 'Empieza con una foto' }),
-      el('p', { textContent: 'Elige JPG o HEIC de tu carrete. Se editan aquí, sin cuenta y sin nube.' }),
-      el('label', { className: 'btn-fill', htmlFor: 'pick', textContent: 'Añadir fotos', tabIndex: 0, role: 'button' }),
+      el('h2', { textContent: t('empty.title') }),
+      el('p', { textContent: t('empty.body') }),
+      el('label', { className: 'btn-fill', htmlFor: 'pick', textContent: t('empty.add'), tabIndex: 0, role: 'button' }),
       tryBtn,
     ]));
     grid.querySelector('.art').setAttribute('viewBox', '0 0 52 48');
@@ -751,7 +878,7 @@ async function renderLibrary() {
 function tileFor(p) {
   const url = URL.createObjectURL(p.thumb); thumbUrls.push(url);
   const b = el('button', { className: 'tile', type: 'button',
-    ariaLabel: `${p.fileName}, ${megapixels(p.width, p.height)}${p.hasEdit ? ', editada' : ''}` }, [
+    ariaLabel: `${p.fileName}, ${megapixels(p.width, p.height)}${p.hasEdit ? t('tile.edited') : ''}` }, [
     el('img', { src: url, alt: '' }),
     el('span', { className: 'fmt', textContent: /hei/i.test(p.mime) ? 'HEIC' : 'JPG' }),
   ]);
@@ -775,7 +902,7 @@ $('#pick').addEventListener('change', async (e) => {
   if (!files.length) return;
   const failed = [];
   for (let i = 0; i < files.length; i++) {
-    toast(files.length === 1 ? 'Añadiendo…' : `Añadiendo ${i + 1} de ${files.length}…`, 60000);
+    toast(files.length === 1 ? t('add.one') : t('add.progress', { i: i + 1, n: files.length }), 60000);
     const f = files[i];
     if (!isAccepted(f)) { failed.push(f.name); continue; }
     try {
@@ -785,12 +912,12 @@ $('#pick').addEventListener('change', async (e) => {
       const thumb = await toBlob(rasterize(img, tw, th), 'image/jpeg', .8);
       done();
       const mime = f.type || (/\.hei[cf]$/i.test(f.name) ? 'image/heic' : 'image/jpeg');
-      await store.put('photos', { id: uid(), fileName: f.name || 'foto.jpg', mime, width: w, height: h,
+      await store.put('photos', { id: uid(), fileName: f.name || t('file.default') + '.jpg', mime, width: w, height: h,
         addedAt: now(), updatedAt: now(), hasEdit: false, thumb, original: new Blob([f], { type: mime }) });
     } catch (err) { failed.push(f.name); }
   }
-  toast(failed.length ? `No se pudo abrir: ${failed.join(', ')}. Por ahora solo JPG y HEIC.`
-    : (files.length === 1 ? 'Foto añadida' : `${files.length} fotos añadidas`), failed.length ? 5000 : 2000);
+  toast(failed.length ? t('add.failed', { names: failed.join(', ') })
+    : (files.length === 1 ? t('add.doneOne') : t('add.doneMany', { n: files.length })), failed.length ? 5000 : 2000);
   renderLibrary();
 });
 
@@ -849,10 +976,10 @@ function ringSvg() {
   return t.content.firstChild;
 }
 const adjRow = $('#adjRow');
-const autoBtn = el('button', { className: 'adj auto', type: 'button', id: 'autoBtn', ariaLabel: 'Auto' });
+const autoBtn = el('button', { className: 'adj auto', type: 'button', id: 'autoBtn', ariaLabel: t('adj.auto') });
 autoBtn.setAttribute('aria-pressed', 'false');
 autoBtn.append(ringSvg(), svg(AUTO_GLYPH));
-const group = el('div', { className: 'adj-group', role: 'radiogroup', ariaLabel: 'Ajustes' });
+const group = el('div', { className: 'adj-group', role: 'radiogroup', ariaLabel: t('adj.group') });
 for (const d of SLIDERS) {
   const b = el('button', { className: 'adj', type: 'button', role: 'radio', id: 'adj-' + d.key });
   b.dataset.key = d.key;
@@ -971,15 +1098,15 @@ ruler.addEventListener('keyup', (e) => { if (/Arrow|Page|Home|End|Backspace|Dele
 
 function syncControls() {
   const d = dial(), v = dialValue();
-  $('#adjName').textContent = d.label;
+  $('#adjName').textContent = adjLabel(d.key);
   $('#scale').className = 'scale ' + ((state.mode === 'adjust' && d.scale) || 'none');
   ruler.setAttribute('aria-valuemin', d.min); ruler.setAttribute('aria-valuemax', d.max);
   syncChips();
   const val = $('#adjValue');
   const noPreset = state.mode === 'presets' && !(state.settings.preset && presetById(state.settings.preset.id));
   ruler.style.visibility = noPreset ? 'hidden' : 'visible';
-  if (noPreset) $('#adjName').textContent = 'Elige un preset';
-  else if (state.mode === 'presets') $('#adjName').textContent = 'Cantidad · ' + presetById(state.settings.preset.id).name;
+  if (noPreset) $('#adjName').textContent = t('presets.choose');
+  else if (state.mode === 'presets') $('#adjName').textContent = t('presets.amountOf', { name: presetName(presetById(state.settings.preset.id)) });
   val.textContent = noPreset ? '' : v === 0 && !d.ref ? '0' : fmtValue(d.key, v);
   val.classList.toggle('zero', v === (d.ref || 0));
   ruler.setAttribute('aria-valuenow', v); ruler.setAttribute('aria-valuetext', fmtValue(d.key, v));
@@ -990,7 +1117,7 @@ function syncControls() {
     arc.setAttribute('stroke-dasharray', `${(f * RING_C).toFixed(1)} ${RING_C}`);
     arc.setAttribute('transform', bv < 0 ? 'translate(0 52) scale(1 -1)' : '');
     arc.style.visibility = f === 0 ? 'hidden' : 'visible';
-    b.setAttribute('aria-label', `${dd.label}, ${fmtValue(dd.key, bv)}`);
+    b.setAttribute('aria-label', `${adjLabel(dd.key)}, ${fmtValue(dd.key, bv)}`);
   }
   autoBtn.setAttribute('aria-pressed', state.autoPrev ? 'true' : 'false');
   $('#undoBtn').disabled = state.hIndex <= 0;
@@ -1078,7 +1205,7 @@ autoBtn.addEventListener('click', () => {
     state.settings = clone(state.autoPrev);
   } else {
     keep = clone(state.settings);
-    try { state.settings = autoSettings(state.src); } catch (e) { toast('Auto no pudo analizar esta foto.'); return; }
+    try { state.settings = autoSettings(state.src); } catch (e) { toast(t('auto.fail')); return; }
   }
   state.autoPrev = null; commit(); state.autoPrev = keep;
   syncControls(); requestDraw(); scheduleSave();
@@ -1220,7 +1347,8 @@ $('#flipBtn').addEventListener('click', () => {
 $('#cropReset').addEventListener('click', () => { if (state.src) setCrop({ ...DEFAULT_CROP }, { commitNow: true }); });
 const chips = $('#chips');
 for (const [label, ratio] of RATIOS) {
-  const b = el('button', { className: 'chip', type: 'button', textContent: label });
+  const b = el('button', { className: 'chip', type: 'button', textContent: label.startsWith('crop.') ? t(label) : label });
+  if (label.startsWith('crop.')) b.dataset.i18n = label;
   b.setAttribute('aria-pressed', 'false');
   b.addEventListener('click', () => {
     if (!state.src) return;
@@ -1259,7 +1387,7 @@ function presetTile(id, name, extra = {}) {
   const b = el('button', { className: 'ptile', type: 'button' }, [el('canvas', { width: 128, height: 128 }), el('span', { textContent: name })]);
   b.dataset.id = id || '';
   b.setAttribute('aria-pressed', 'false');
-  b.setAttribute('aria-label', id ? `Preset ${name}` : 'Sin preset');
+  b.setAttribute('aria-label', id ? t('presets.tile', { name }) : t('presets.noneAria'));
   let pressTimer = 0, longPressed = false;
   if (extra.mine) {
     const start = () => { longPressed = false; pressTimer = setTimeout(() => { longPressed = true; askDeletePreset(id, name); }, 550); };
@@ -1271,12 +1399,12 @@ function presetTile(id, name, extra = {}) {
   return b;
 }
 function buildPresetRow() {
-  presetRow.replaceChildren(presetTile(null, 'Ninguno'));
-  for (const pr of BUILTIN_PRESETS) presetRow.append(presetTile(pr.id, pr.name));
+  presetRow.replaceChildren(presetTile(null, t('presets.none')));
+  for (const pr of BUILTIN_PRESETS) presetRow.append(presetTile(pr.id, presetName(pr)));
   presetRow.append(el('span', { className: 'vsep', ariaHidden: 'true' }));
   for (const pr of state.userPresets) presetRow.append(presetTile(pr.id, pr.name, { mine: true }));
-  const add = el('button', { className: 'ptile add', type: 'button', ariaLabel: 'Guardar como preset' },
-    [el('div', { className: 'addbox' }, [svg('<path d="M12 5v14M5 12h14"/>')]), el('span', { textContent: 'Guardar' })]);
+  const add = el('button', { className: 'ptile add', type: 'button', ariaLabel: t('presets.addAria') },
+    [el('div', { className: 'addbox' }, [svg('<path d="M12 5v14M5 12h14"/>')]), el('span', { textContent: t('presets.add') })]);
   add.addEventListener('click', openSavePreset);
   presetRow.append(add);
   syncPresetTiles(); renderPresetPreviews();
@@ -1312,38 +1440,38 @@ function switchRow(id, label, hint, checked) {
 function openSavePreset() {
   const n = state.userPresets.length + 1;
   openSheet('modal', (sh) => {
-    const save = el('button', { className: 'btn-text strong', type: 'button', textContent: 'Guardar' });
-    const cancel = el('button', { className: 'btn-text left', type: 'button', textContent: 'Cancelar', onclick: closeSheet });
-    const name = el('input', { id: 'presetName', type: 'text', value: `Mi preset ${n}`, maxLength: 24, autocomplete: 'off' });
-    sh.append(el('div', { className: 'grabber' }), sheetNav('Nuevo preset', cancel, save),
-      el('div', { className: 'field' }, [el('label', { htmlFor: 'presetName', textContent: 'Nombre' }), name]),
-      el('div', { className: 'list' }, [switchRow('incLight', 'Luz', 'Exposición, contraste, altas luces, sombras, blancos, negros', true),
-        switchRow('incColor', 'Color', 'Temperatura, matiz, intensidad, saturación', true)]),
-      el('p', { className: 'facts', textContent: 'Guarda los valores de esta foto, con el preset que tenga aplicado. El recorte no se incluye.' }));
+    const save = el('button', { className: 'btn-text strong', type: 'button', textContent: t('savep.save') });
+    const cancel = el('button', { className: 'btn-text left', type: 'button', textContent: t('cancel'), onclick: closeSheet });
+    const name = el('input', { id: 'presetName', type: 'text', value: t('savep.default', { n }), maxLength: 24, autocomplete: 'off' });
+    sh.append(el('div', { className: 'grabber' }), sheetNav(t('savep.title'), cancel, save),
+      el('div', { className: 'field' }, [el('label', { htmlFor: 'presetName', textContent: t('savep.name') }), name]),
+      el('div', { className: 'list' }, [switchRow('incLight', t('group.light'), t('group.lightHint'), true),
+        switchRow('incColor', t('group.color'), t('group.colorHint'), true)]),
+      el('p', { className: 'facts', textContent: t('savep.note') }));
     save.addEventListener('click', async () => {
       const groups = { light: $('#incLight').checked, color: $('#incColor').checked };
       const eff = effective(state.settings), values = {};
       for (const d of SLIDERS) if (groups[d.group] && eff[d.key] !== 0) values[d.key] = eff[d.key];
-      if (!Object.keys(values).length) { toast('No hay ajustes que guardar en esos grupos. Mueve alguno primero.', 4000); return; }
-      const rec = { id: 'u-' + uid(), name: name.value.trim() || `Mi preset ${n}`, values, createdAt: now(), builtIn: false };
+      if (!Object.keys(values).length) { toast(t('savep.empty'), 4000); return; }
+      const rec = { id: 'u-' + uid(), name: name.value.trim() || t('savep.default', { n }), values, createdAt: now(), builtIn: false };
       await store.put('presets', rec);
       state.userPresets.push(rec);
-      closeSheet(); buildPresetRow(); toast(`Preset «${rec.name}» guardado`);
+      closeSheet(); buildPresetRow(); toast(t('savep.saved', { name: rec.name }));
     });
   });
 }
 function askDeletePreset(id, name) {
   openSheet('action', (sh) => {
     sh.append(el('div', { className: 'group' }, [
-      el('p', { className: 'msg' }, [el('strong', { textContent: name }), 'Las fotos que lo usan vuelven a sus ajustes propios.']),
-      el('button', { className: 'as-btn danger', type: 'button', textContent: 'Borrar preset', onclick: async () => {
+      el('p', { className: 'msg' }, [el('strong', { textContent: name }), t('delp.note')]),
+      el('button', { className: 'as-btn danger', type: 'button', textContent: t('delp.btn'), onclick: async () => {
         closeSheet();
         await store.del('presets', id);
         state.userPresets = state.userPresets.filter((x) => x.id !== id);
         if (state.settings.preset && state.settings.preset.id === id) choosePreset(null);
-        buildPresetRow(); toast(`Preset «${name}» borrado`);
+        buildPresetRow(); toast(t('delp.done', { name }));
       } })]),
-      el('div', { className: 'group' }, [el('button', { className: 'as-btn cancel', type: 'button', textContent: 'Cancelar', onclick: closeSheet })]));
+      el('div', { className: 'group' }, [el('button', { className: 'as-btn cancel', type: 'button', textContent: t('cancel'), onclick: closeSheet })]));
   });
 }
 
@@ -1378,18 +1506,18 @@ function pasteInto(s, clip, w, h) {
 }
 function openCopySheet() {
   openSheet('modal', (sh) => {
-    const copy = el('button', { className: 'btn-fill block', type: 'button', textContent: 'Copiar ajustes' });
+    const copy = el('button', { className: 'btn-fill block', type: 'button', textContent: t('copy.title') });
     sh.append(el('div', { className: 'grabber' }),
-      sheetNav('Copiar ajustes', null, el('button', { className: 'btn-text', type: 'button', textContent: 'Cerrar', onclick: closeSheet })),
-      el('div', { className: 'list' }, [switchRow('cpLight', 'Luz', '', true), switchRow('cpColor', 'Color', '', true),
-        switchRow('cpPreset', 'Preset', '', true), switchRow('cpCrop', 'Recorte', 'Encuadre, enderezado, giro', false)]),
-      copy, el('p', { className: 'facts', textContent: 'Luego pégalos desde ••• en otra foto, o en varias a la vez desde la biblioteca con «Seleccionar».' }));
+      sheetNav(t('copy.title'), null, el('button', { className: 'btn-text', type: 'button', textContent: t('close'), onclick: closeSheet })),
+      el('div', { className: 'list' }, [switchRow('cpLight', t('group.light'), '', true), switchRow('cpColor', t('group.color'), '', true),
+        switchRow('cpPreset', t('group.preset'), '', true), switchRow('cpCrop', t('group.crop'), t('group.cropHint'), false)]),
+      copy, el('p', { className: 'facts', textContent: t('copy.note') }));
     copy.addEventListener('click', () => {
       const groups = { light: $('#cpLight').checked, color: $('#cpColor').checked, preset: $('#cpPreset').checked, crop: $('#cpCrop').checked };
-      if (!Object.values(groups).some(Boolean)) { toast('Elige al menos un grupo.'); return; }
+      if (!Object.values(groups).some(Boolean)) { toast(t('copy.none')); return; }
       state.clipboard = copyFrom(state.settings, groups);
       try { localStorage.setItem(CLIP_KEY, JSON.stringify(state.clipboard)); } catch (e) {}
-      closeSheet(); toast('Ajustes copiados');
+      closeSheet(); toast(t('copy.done'));
     });
   });
 }
@@ -1398,7 +1526,7 @@ function pasteHere() {
   state.settings = pasteInto(state.settings, state.clipboard, state.src.width, state.src.height);
   state.autoPrev = null; commit(); layout(); syncControls(); requestDraw(); scheduleSave();
   if (state.mode === 'presets') { syncPresetTiles(); renderPresetPreviews(); }
-  toast('Ajustes pegados');
+  toast(t('paste.done'));
 }
 // a photo that is not open: decode, render a new thumbnail, store
 async function thumbFor(photo, settings) {
@@ -1415,7 +1543,7 @@ async function pasteToPhotos(ids) {
   const photos = (await store.all('photos')).filter((p) => ids.has(p.id));
   let i = 0, failed = 0;
   for (const p of photos) {
-    toast(`Pegando ${++i} de ${photos.length}…`, 60000);
+    toast(t('paste.progress', { i: ++i, n: photos.length }), 60000);
     try {
       const edit = await store.get('edits', p.id);
       const s = pasteInto(fromStored(edit && edit.settings), state.clipboard, p.width, p.height);
@@ -1424,13 +1552,13 @@ async function pasteToPhotos(ids) {
       await store.put('photos', p);
     } catch (e) { failed++; }
   }
-  toast(failed ? `Pegado en ${photos.length - failed}; ${failed} no se pudieron procesar.` : (photos.length === 1 ? 'Ajustes pegados en 1 foto' : `Ajustes pegados en ${photos.length} fotos`), 3500);
+  toast(failed ? t('paste.partial', { ok: photos.length - failed, failed }) : (photos.length === 1 ? t('paste.one') : t('paste.many', { n: photos.length })), 3500);
 }
 
 /* ---------- library: select photos to paste onto ---------- */
 function setSelecting(on) {
   state.selecting = on; state.selected.clear();
-  $('#selectBtn').textContent = on ? 'Cancelar' : 'Seleccionar';
+  $('#selectBtn').dataset.i18n = on ? 'sel.cancel' : 'sel.select'; $('#selectBtn').textContent = t($('#selectBtn').dataset.i18n);
   $('#grid').classList.toggle('selecting', on);
   $('#selectBar').hidden = !on;
   for (const t of $('#grid').querySelectorAll('.tile')) t.classList.remove('sel');
@@ -1438,8 +1566,8 @@ function setSelecting(on) {
 }
 function syncSelectBar() {
   const n = state.selected.size;
-  $('#selCount').textContent = !state.clipboard ? 'Primero copia ajustes desde una foto (••• › Copiar ajustes)'
-    : n ? (n === 1 ? '1 foto seleccionada' : `${n} fotos seleccionadas`) : 'Toca las fotos a las que quieres pegar los ajustes';
+  $('#selCount').textContent = !state.clipboard ? t('sel.needCopy')
+    : n ? (n === 1 ? t('sel.one') : t('sel.many', { n })) : t('sel.hint');
   $('#pasteSelBtn').disabled = !state.clipboard || !n;
 }
 $('#selectBtn').addEventListener('click', () => setSelecting(!state.selecting));
@@ -1497,9 +1625,9 @@ async function openEditor(p) {
     state.src = rasterize(img, w, h); done();
     ensureRenderer().setImage(state.src);
     canvas.hidden = false; layout(); syncControls(); requestDraw();
-    if (once('revelado.hint.hold')) toast('Mantén pulsada la foto para ver el antes', 3500);
+    if (once('revelado.hint.hold')) toast(t('hint.hold'), 3500);
   } catch (err) {
-    toast(err && err.message === 'webgl' ? 'Este navegador no puede mostrar la edición (falta WebGL2).' : 'Esta foto no se pudo abrir.', 5000);
+    toast(err && err.message === 'webgl' ? t('err.webgl') : t('err.open'), 5000);
   } finally { $('#loading').hidden = true; }
 }
 async function refreshThumb() {
@@ -1533,25 +1661,25 @@ $('#moreBtn').addEventListener('click', () => {
     const msg = el('p', { className: 'msg' }, [el('strong', { textContent: p.fileName }),
       `${p.width} × ${p.height} · ${megapixels(p.width, p.height)} · ${/hei/i.test(p.mime) ? 'HEIC' : 'JPG'}`]);
     const top = el('div', { className: 'group' }, [msg,
-      el('button', { className: 'as-btn', type: 'button', textContent: 'Copiar ajustes', onclick: () => { closeSheet(); openCopySheet(); } })]);
-    if (state.clipboard) top.append(el('button', { className: 'as-btn', type: 'button', textContent: 'Pegar ajustes', onclick: () => { closeSheet(); pasteHere(); } }));
+      el('button', { className: 'as-btn', type: 'button', textContent: t('copy.title'), onclick: () => { closeSheet(); openCopySheet(); } })]);
+    if (state.clipboard) top.append(el('button', { className: 'as-btn', type: 'button', textContent: t('paste.title'), onclick: () => { closeSheet(); pasteHere(); } }));
     if (!p.sample) {
-      top.append(el('button', { className: 'as-btn danger', type: 'button', textContent: 'Quitar del editor', onclick: async () => {
+      top.append(el('button', { className: 'as-btn danger', type: 'button', textContent: t('more.remove'), onclick: async () => {
         closeSheet();
         clearTimeout(state.saveTimer); state.saveTimer = 0; state.changed = false;
         await store.removePhoto(p.id);
         state.photo = null; state.src = null;
         $('#editor').hidden = true; $('#library').hidden = false;
-        toast('Quitada de Lumora. La original sigue en tu carrete.'); renderLibrary();
+        toast(t('more.removed')); renderLibrary();
       } }));
     }
-    sh.append(top, el('div', { className: 'group' }, [el('button', { className: 'as-btn cancel', type: 'button', textContent: 'Cancelar', onclick: closeSheet })]));
+    sh.append(top, el('div', { className: 'group' }, [el('button', { className: 'as-btn cancel', type: 'button', textContent: t('cancel'), onclick: closeSheet })]));
   });
 });
 
 /* ---------- export (modal sheet) ---------- */
-const SIZES = [['Máximo', 0], ['4096', 4096], ['2048', 2048], ['1080', 1080]];
-const QUALITIES = [['Alta', .92], ['Media', .8], ['Ligera', .65]];
+const SIZES = [['export.max', 0], ['4096', 4096], ['2048', 2048], ['1080', 1080]];
+const QUALITIES = [['q.high', .92], ['q.medium', .8], ['q.light', .65]];
 function exportPrefs() {
   try { const v = JSON.parse(localStorage.getItem('lumora.export') || 'null'); if (v) return v; } catch (e) {}
   return { size: 0, quality: .92 };
@@ -1559,7 +1687,7 @@ function exportPrefs() {
 function seg(options, current, onPick) {
   const box = el('div', { className: 'seg', role: 'group' });
   for (const [label, val] of options) {
-    const b = el('button', { type: 'button', textContent: label });
+    const b = el('button', { type: 'button', textContent: /^[a-z]/.test(label) ? t(label) : label });
     b.setAttribute('aria-pressed', val === current ? 'true' : 'false');
     b.addEventListener('click', () => { for (const x of box.children) x.setAttribute('aria-pressed', 'false'); b.setAttribute('aria-pressed', 'true'); onPick(val); });
     box.append(b);
@@ -1570,12 +1698,12 @@ $('#exportBtn').addEventListener('click', () => {
   if (!state.photo) return;
   const prefs = exportPrefs();
   openSheet('modal', (sh) => {
-    const go = el('button', { className: 'btn-fill block', type: 'button', textContent: 'Exportar foto' });
+    const go = el('button', { className: 'btn-fill block', type: 'button', textContent: t('export.go') });
     sh.append(el('div', { className: 'grabber' }),
-      sheetNav('Exportar', null, el('button', { className: 'btn-text', type: 'button', textContent: 'Cerrar', onclick: closeSheet })),
-      el('p', { className: 'field-label', textContent: 'Tamaño (lado largo, en píxeles)' }), seg(SIZES, prefs.size, (v) => { prefs.size = v; }),
-      el('p', { className: 'field-label', textContent: 'Calidad JPG' }), seg(QUALITIES, prefs.quality, (v) => { prefs.quality = v; }),
-      go, el('p', { className: 'facts', textContent: 'Sin ubicación ni datos de la cámara.' }));
+      sheetNav(t('export.title'), null, el('button', { className: 'btn-text', type: 'button', textContent: t('close'), onclick: closeSheet })),
+      el('p', { className: 'field-label', textContent: t('export.size') }), seg(SIZES, prefs.size, (v) => { prefs.size = v; }),
+      el('p', { className: 'field-label', textContent: t('export.quality') }), seg(QUALITIES, prefs.quality, (v) => { prefs.quality = v; }),
+      go, el('p', { className: 'facts', textContent: t('export.note') }));
     go.addEventListener('click', () => {
       try { localStorage.setItem('lumora.export', JSON.stringify(prefs)); } catch (e) {}
       closeSheet(); doExport(prefs.size, prefs.quality);
@@ -1585,7 +1713,7 @@ $('#exportBtn').addEventListener('click', () => {
 async function doExport(limit, quality) {
   const p = state.photo; if (!p) return;
   const btn = $('#exportBtn'); btn.disabled = true;
-  toast('Preparando la foto…', 60000);
+  toast(t('export.preparing'), 60000);
   try {
     await save();
     const { img, done } = await decode(p.original);
@@ -1608,7 +1736,7 @@ async function doExport(limit, quality) {
     $('#toast').hidden = true;
     showExport(blob, baseName(p.fileName) + '-lumora.jpg', ow, oh, !limit && img.naturalWidth * img.naturalHeight > w * h);
   } catch (err) {
-    toast('No se pudo exportar. Cierra otras apps y vuelve a intentarlo.', 5000);
+    toast(t('export.fail'), 5000);
   } finally { btn.disabled = false; }
 }
 function showExport(blob, name, w, h, reduced) {
@@ -1617,25 +1745,34 @@ function showExport(blob, name, w, h, reduced) {
   let canShare = false;
   try { canShare = !!(navigator.canShare && navigator.canShare({ files: [file] })); } catch (e) { canShare = false; }
   openSheet('modal', (sh) => {
-    const img = el('img', { src: url, alt: 'Foto exportada' }); img.dataset.url = url;
+    const img = el('img', { src: url, alt: t('export.alt') }); img.dataset.url = url;
     sh.append(
       el('div', { className: 'grabber' }),
-      el('div', { className: 'sheet-nav' }, [el('span'), el('h2', { textContent: 'Exportar' }),
-        el('button', { className: 'btn-text', type: 'button', textContent: 'Cerrar', onclick: closeSheet })]),
+      sheetNav(t('export.title'), null, el('button', { className: 'btn-text', type: 'button', textContent: t('close'), onclick: closeSheet })),
       img,
-      el('p', { className: 'facts', textContent: `${w} × ${h} · ${megapixels(w, h)} · JPG · ${fileSize(blob.size)} · sin ubicación` }),
+      el('p', { className: 'facts', textContent: t('export.facts', { w, h, mp: megapixels(w, h), size: fileSize(blob.size) }) }),
     );
     if (canShare) {
-      sh.append(el('button', { className: 'btn-fill block', type: 'button', textContent: 'Guardar en Fotos o compartir', onclick: async () => {
+      sh.append(el('button', { className: 'btn-fill block', type: 'button', textContent: t('export.save'), onclick: async () => {
         try { await navigator.share({ files: [file] }); closeSheet(); }
-        catch (e) { if (e && e.name !== 'AbortError') toast('No se abrió el menú de compartir. Mantén pulsada la imagen y elige «Guardar en Fotos».', 6000); }
+        catch (e) { if (e && e.name !== 'AbortError') toast(t('export.shareFail'), 6000); }
       } }));
     }
-    sh.append(el('p', { className: 'facts', textContent: (canShare ? 'Elige «Guardar imagen» para llevarla a Fotos, o ' : '') +
-      (canShare ? 'mantén pulsada la imagen.' : 'Mantén pulsada la imagen y elige «Guardar en Fotos».') +
-      (reduced ? ' Reducida a 16 MP por el límite de memoria de Safari.' : '') }));
+    sh.append(el('p', { className: 'facts', textContent: (canShare ? t('export.hintShare') : t('export.hintHold')) + (reduced ? t('export.reduced') : '') }));
   });
 }
+
+/* ---------- language switch (top-left of the library) ---------- */
+function setLang(l) {
+  LANG = l === 'es' ? 'es' : 'en';
+  try { localStorage.setItem('lumora.lang', LANG); } catch (e) {}
+  applyStatic();
+  autoBtn.setAttribute('aria-label', t('adj.auto')); group.setAttribute('aria-label', t('adj.group'));
+  for (const c of chips.children) if (c.dataset.i18n) c.textContent = t(c.dataset.i18n);
+  renderLibrary(); syncSelectBar();
+  if (!$('#editor').hidden) { syncControls(); if (state.mode === 'presets') buildPresetRow(); }
+}
+$('#langBtn').addEventListener('click', () => setLang(LANG === 'en' ? 'es' : 'en'));
 
 /* ---------- start ---------- */
 (async () => {
@@ -1643,6 +1780,7 @@ function showExport(blob, name, w, h, reduced) {
   try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {}); } catch (e) {}
   await store.open();
   try { state.userPresets = (await store.all('presets')).sort((a, b) => a.createdAt.localeCompare(b.createdAt)); } catch (e) { state.userPresets = []; }
+  applyStatic(); syncSelectBar();
   selectAdj(state.adj, false);
   renderLibrary();
 })();
