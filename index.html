@@ -332,6 +332,34 @@ button.adj-value:active { background: var(--fill); }
 .scale.temp { background: linear-gradient(90deg, #5B8FD6, transparent 50%, #D9B44A); }
 .scale.tint { background: linear-gradient(90deg, #6FB36A, transparent 50%, #C46FC0); }
 .scale.none { display: none; }
+.scale.hue { background: linear-gradient(90deg, hsl(0 75% 55%), hsl(60 75% 55%), hsl(120 75% 50%), hsl(180 75% 50%), hsl(240 75% 60%), hsl(300 75% 55%), hsl(360 75% 55%)); }
+.subpane { display: grid; align-content: center; gap: 8px; height: 92px; padding: 0 12px; }
+.sub-top { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.sub-back { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--fill); color: var(--text); flex: none; position: relative; }
+.sub-back::after { content: ""; position: absolute; inset: -6px; }
+.sub-title { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--text-2); white-space: nowrap; }
+.dotc { width: 10px; height: 10px; border-radius: 50%; }
+.mini-seg { margin-left: auto; display: flex; padding: 2px; border-radius: 999px; background: var(--fill); }
+.mini-seg button { min-height: 28px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+.mini-seg button[aria-pressed="true"] { background: var(--fill-strong); color: var(--text); }
+.swatches { display: flex; justify-content: space-between; gap: 6px; }
+.swatch { position: relative; width: 36px; height: 36px; border-radius: 50%; background: var(--sw); box-shadow: inset 0 0 0 1px rgb(0 0 0 / .25); flex: none;
+  transition: transform var(--t-med) var(--bounce); }
+.swatch::after { content: ""; position: absolute; inset: -5px; border-radius: 50%; border: 2px solid transparent; transition: border-color var(--t-fast); }
+.swatch[aria-checked="true"]::after { border-color: var(--text); }
+.swatch[aria-checked="true"] { transform: scale(.86); }
+.swatch.edited::before, .chip.edited::before { content: ""; position: absolute; right: -3px; top: -3px; width: 7px; height: 7px; border-radius: 50%; background: var(--aurora); z-index: 1; }
+.regions { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.regions::-webkit-scrollbar { display: none; }
+.regions .chip { position: relative; }
+.tool.pane-open { color: var(--text-2); }
+.focus { position: absolute; z-index: 4; transform: translate(-50%, -50%); border-radius: 50%; border: 1.5px dashed rgb(247 248 250 / .9);
+  box-shadow: 0 0 0 1px rgb(0 0 0 / .25), inset 0 0 0 1px rgb(0 0 0 / .2); touch-action: none; cursor: move; transition: opacity var(--t-fast); }
+.focus::after { content: ""; position: absolute; inset: -20px; border-radius: 50%; }
+.focus.dim { opacity: .55; }
+.focus.dragging { border-style: solid; }
+.focus-c { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; background: rgb(247 248 250 / .92);
+  box-shadow: 0 1px 6px rgb(0 0 0 / .4); }
 
 .tray { position: relative; min-width: 0; display: grid; align-items: center; }
 .tray > * { grid-area: 1 / 1; }
@@ -382,8 +410,8 @@ button.adj-value:active { background: var(--fill); }
 .ptile .mine svg { width: 10px; height: 10px; stroke-width: 2.6; }
 .looks .tool-sep { align-self: center; margin: -18px 2px 0; height: 40px; }
 
-.tabbar { display: flex; gap: 2px; padding: 4px; border-radius: 999px; position: relative; max-width: 620px; }
-.tab { position: relative; z-index: 1; display: grid; justify-items: center; align-content: center; gap: 2px; min-width: 76px; height: 50px; padding: 0 10px; border-radius: 999px;
+.tabbar { display: flex; gap: 0; padding: 4px; border-radius: 999px; position: relative; width: min(100%, 470px); }
+.tab { position: relative; z-index: 1; display: grid; justify-items: center; align-content: center; gap: 2px; flex: 1; min-width: 0; height: 50px; padding: 0 4px; border-radius: 999px;
   color: var(--text-muted); font-size: 10.5px; line-height: 12px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
   transition: color var(--t-med), transform var(--t-med) var(--bounce); }
 .tab svg.i { width: 22px; height: 22px; }
@@ -532,6 +560,7 @@ button.adj-value:active { background: var(--fill); }
     </div>
     <div id="loading" class="loading" hidden><span class="spinner aurora" aria-hidden="true"></span><span data-i18n="opening"></span></div>
   </div>
+  <div id="focus" class="focus" hidden><span class="focus-c" aria-hidden="true"></span></div>
   <span id="origBadge" class="stage-chip glass" hidden data-i18n="original"></span>
   <div id="split" class="split" hidden>
     <span class="split-line" aria-hidden="true"></span>
@@ -577,6 +606,19 @@ button.adj-value:active { background: var(--fill); }
       <div class="tray" id="tray">
         <div id="row-light" class="tool-row" data-pane="light"></div>
         <div id="row-color" class="tool-row out" data-pane="color"></div>
+        <div id="pane-mixer" class="subpane out" data-pane="mixer">
+          <div class="sub-top"><button class="sub-back press" type="button" data-i18n-aria="backToColor"><svg class="i sm" data-icon="back"></svg></button>
+            <span class="sub-title"><span id="swatchHint" class="dotc"></span><span data-i18n="mixer"></span></span>
+            <div id="mixAttr" class="mini-seg" role="group" data-i18n-aria="mixer"></div></div>
+          <div id="mixSwatches" class="swatches" role="radiogroup" data-i18n-aria="mixer"></div>
+        </div>
+        <div id="pane-grading" class="subpane out" data-pane="grading">
+          <div class="sub-top"><button class="sub-back press" type="button" data-i18n-aria="backToColor"><svg class="i sm" data-icon="back"></svg></button>
+            <span class="sub-title" data-i18n="grading"></span>
+            <div id="gradeAttr" class="mini-seg" role="group" data-i18n-aria="grading"></div></div>
+          <div id="gradeRegions" class="regions" role="radiogroup" data-i18n-aria="grading"></div>
+        </div>
+        <div id="row-effects" class="tool-row out" data-pane="effects"></div>
         <div id="presetRow" class="looks out" data-pane="looks" role="group" data-i18n-aria="looks"></div>
         <div id="cropRow" class="crop-tools out" data-pane="crop">
           <button id="rotBtn" class="round press" type="button" data-i18n-aria="rotate"><svg class="i" data-icon="rotate"></svg></button>
@@ -592,6 +634,7 @@ button.adj-value:active { background: var(--fill); }
       <span class="tab-ind" id="tabInd" aria-hidden="true"></span>
       <button id="mode-light" class="tab" role="tab" type="button" aria-selected="true" aria-controls="panel"><span class="dot"></span><svg class="i" data-icon="light"></svg><span data-i18n="tLight"></span></button>
       <button id="mode-color" class="tab" role="tab" type="button" aria-selected="false" aria-controls="panel"><span class="dot"></span><svg class="i" data-icon="color"></svg><span data-i18n="tColor"></span></button>
+      <button id="mode-effects" class="tab" role="tab" type="button" aria-selected="false" aria-controls="panel"><span class="dot"></span><svg class="i" data-icon="effects"></svg><span data-i18n="tEffects"></span></button>
       <button id="mode-looks" class="tab" role="tab" type="button" aria-selected="false" aria-controls="panel"><span class="dot"></span><svg class="i" data-icon="looks"></svg><span data-i18n="tLooks"></span></button>
       <button id="mode-crop" class="tab" role="tab" type="button" aria-selected="false" aria-controls="panel"><span class="dot"></span><svg class="i" data-icon="crop"></svg><span data-i18n="tCrop"></span></button>
     </nav>
@@ -629,6 +672,12 @@ const STR = {
     compare: 'Antes y después', splitPos: 'Divisor entre original y edición', editedLabel: 'Editada', typeValue: 'Escribir un valor exacto', estSize: (s) => `Peso estimado ≈ ${s}`, undo: 'Deshacer', redo: 'Rehacer', moreOptions: 'Más opciones', export: 'Exportar',
     fine: 'Ajuste fino', fineTag: 'FINO', manageLook: 'Gestionar look', resetValue: 'Restablecer valor', looks: 'Looks',
     rotate: 'Girar 90° a la izquierda', flip: 'Voltear en horizontal', aspect: 'Proporción', reset: 'Restablecer', editMode: 'Herramientas de edición',
+    tEffects: 'Efectos', grpEffectsHint: 'Claridad, grano, detalle, óptica, desenfoque', mixer: 'Mezclador', grading: 'Gradación', backToColor: 'Volver a Color',
+    'adj.clarity': 'Claridad', 'adj.texture': 'Textura', 'adj.dehaze': 'Quitar neblina', 'adj.vignette': 'Viñeta', 'adj.grain': 'Grano', 'adj.grainSize': 'Tamaño del grano',
+    'adj.sharpen': 'Nitidez', 'adj.noise': 'Reducir ruido', 'adj.lensVig': 'Viñeteo del objetivo', 'adj.fringe': 'Aberración cromática', 'adj.distortion': 'Distorsión',
+    'adj.lensBlur': 'Desenfoque', 'adj.gBal': 'Equilibrio', 'adj.gBlend': 'Fusión',
+    'col.Red': 'Rojo', 'col.Orange': 'Naranja', 'col.Yellow': 'Amarillo', 'col.Green': 'Verde', 'col.Aqua': 'Aguamarina', 'col.Blue': 'Azul', 'col.Purple': 'Púrpura', 'col.Magenta': 'Magenta',
+    'attr.H': 'Tono', 'attr.S': 'Saturación', 'attr.L': 'Luminancia', 'reg.Sh': 'Sombras', 'reg.Mid': 'Medios', 'reg.Hi': 'Luces', 'reg.Bal': 'Equilibrio', 'reg.Blend': 'Fusión',
     tLight: 'Luz', tColor: 'Color', tLooks: 'Looks', tCrop: 'Recorte',
     'adj.exposure': 'Exposición', 'adj.contrast': 'Contraste', 'adj.highlights': 'Altas luces', 'adj.shadows': 'Sombras',
     'adj.whites': 'Blancos', 'adj.blacks': 'Negros', 'adj.temp': 'Temperatura', 'adj.tint': 'Matiz', 'adj.vibrance': 'Intensidad',
@@ -685,6 +734,12 @@ const STR = {
     compare: 'Before and after', splitPos: 'Divider between original and edit', editedLabel: 'Edited', typeValue: 'Type an exact value', estSize: (s) => `Estimated size ≈ ${s}`, undo: 'Undo', redo: 'Redo', moreOptions: 'More options', export: 'Export',
     fine: 'Fine adjustment', fineTag: 'FINE', manageLook: 'Manage look', resetValue: 'Reset value', looks: 'Looks',
     rotate: 'Rotate 90° left', flip: 'Flip horizontally', aspect: 'Aspect ratio', reset: 'Reset', editMode: 'Editing tools',
+    tEffects: 'Effects', grpEffectsHint: 'Clarity, grain, detail, optics, blur', mixer: 'Color Mixer', grading: 'Color Grading', backToColor: 'Back to Color',
+    'adj.clarity': 'Clarity', 'adj.texture': 'Texture', 'adj.dehaze': 'Dehaze', 'adj.vignette': 'Vignette', 'adj.grain': 'Grain', 'adj.grainSize': 'Grain Size',
+    'adj.sharpen': 'Sharpening', 'adj.noise': 'Noise Reduction', 'adj.lensVig': 'Lens Vignetting', 'adj.fringe': 'Chromatic Aberration', 'adj.distortion': 'Distortion',
+    'adj.lensBlur': 'Lens Blur', 'adj.gBal': 'Balance', 'adj.gBlend': 'Blending',
+    'col.Red': 'Red', 'col.Orange': 'Orange', 'col.Yellow': 'Yellow', 'col.Green': 'Green', 'col.Aqua': 'Aqua', 'col.Blue': 'Blue', 'col.Purple': 'Purple', 'col.Magenta': 'Magenta',
+    'attr.H': 'Hue', 'attr.S': 'Saturation', 'attr.L': 'Luminance', 'reg.Sh': 'Shadows', 'reg.Mid': 'Midtones', 'reg.Hi': 'Highlights', 'reg.Bal': 'Balance', 'reg.Blend': 'Blending',
     tLight: 'Light', tColor: 'Color', tLooks: 'Looks', tCrop: 'Crop',
     'adj.exposure': 'Exposure', 'adj.contrast': 'Contrast', 'adj.highlights': 'Highlights', 'adj.shadows': 'Shadows',
     'adj.whites': 'Whites', 'adj.blacks': 'Blacks', 'adj.temp': 'Temperature', 'adj.tint': 'Tint', 'adj.vibrance': 'Vibrance',
@@ -789,6 +844,21 @@ const ICONS = {
   photo: '<rect x="3.75" y="5.25" width="16.5" height="13.5" rx="3"/><circle cx="9" cy="10" r="1.75"/><path d="m4.5 17 4.75-4.25 3.5 3 2.5-2 4.5 3.75"/>',
   splitArrows: '<path d="M9 7 4 12l5 5M15 7l5 5-5 5"/>',
   sparkle: '<path d="M10 3.5l1.6 4.9 4.9 1.6-4.9 1.6L10 16.5l-1.6-4.9L3.5 10l4.9-1.6z"/><path d="M17.5 14.25l.75 2 2 .75-2 .75-.75 2-.75-2-2-.75 2-.75z"/>',
+  effects: '<rect x="3.75" y="4.75" width="16.5" height="14.5" rx="3.25"/><ellipse cx="12" cy="12" rx="5" ry="4" opacity=".55"/><path d="M12 9.5v5M9.5 12h5" />',
+  mixer: '<circle cx="8" cy="9" r="4.25"/><circle cx="16" cy="9" r="4.25"/><circle cx="12" cy="15.5" r="4.25"/>',
+  grading: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="2.25" fill="currentColor" stroke="none"/><path d="M12 3.5v2.5M19.4 16.25l-2.15-1.25M4.6 16.25l2.15-1.25"/>',
+  clarity: '<path d="M12 3.5 20.5 19H3.5z"/><path d="M12 9.5 16.5 17h-9z" fill="currentColor" stroke="none" opacity=".85"/>',
+  texture: '<circle cx="7" cy="7" r="1.25" fill="currentColor" stroke="none"/><circle cx="12" cy="7" r="1.25" fill="currentColor" stroke="none"/><circle cx="17" cy="7" r="1.25" fill="currentColor" stroke="none"/><circle cx="7" cy="12" r="1.25" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.25" fill="currentColor" stroke="none"/><circle cx="17" cy="12" r="1.25" fill="currentColor" stroke="none"/><circle cx="7" cy="17" r="1.25" fill="currentColor" stroke="none"/><circle cx="12" cy="17" r="1.25" fill="currentColor" stroke="none"/><circle cx="17" cy="17" r="1.25" fill="currentColor" stroke="none"/>',
+  dehaze: '<path d="M7 15.5h10.25a3.75 3.75 0 0 0 .4-7.48A5.25 5.25 0 0 0 7.6 9.1 3.25 3.25 0 0 0 7 15.5z"/><path d="M5 19h14M8 21.5h8"/>',
+  vignette: '<rect x="3.75" y="4.75" width="16.5" height="14.5" rx="3.25"/><ellipse cx="12" cy="12" rx="5.25" ry="4"/>',
+  grain: '<circle cx="6" cy="7" r="1" fill="currentColor" stroke="none"/><circle cx="11" cy="5.5" r=".8" fill="currentColor" stroke="none"/><circle cx="17" cy="7.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="8.5" cy="11.5" r=".9" fill="currentColor" stroke="none"/><circle cx="14" cy="11" r="1.2" fill="currentColor" stroke="none"/><circle cx="19" cy="13" r=".8" fill="currentColor" stroke="none"/><circle cx="5.5" cy="15.5" r="1.2" fill="currentColor" stroke="none"/><circle cx="11" cy="16.5" r=".9" fill="currentColor" stroke="none"/><circle cx="16.5" cy="17.5" r="1" fill="currentColor" stroke="none"/><circle cx="9" cy="20" r=".7" fill="currentColor" stroke="none"/>',
+  grainSize: '<circle cx="7.5" cy="8" r="1" fill="currentColor" stroke="none"/><circle cx="7.5" cy="16" r="1" fill="currentColor" stroke="none"/><circle cx="15.5" cy="12" r="3.75"/><path d="M11 12h-1"/>',
+  sharpen: '<path d="M12 3.5 18.5 12 12 20.5 5.5 12z"/><path d="M12 3.5v17"/><path d="M12 3.5 18.5 12 12 20.5z" fill="currentColor" stroke="none" opacity=".85"/>',
+  noise: '<rect x="3.75" y="4.75" width="16.5" height="14.5" rx="3.25"/><circle cx="8.5" cy="9" r=".9" fill="currentColor" stroke="none"/><circle cx="12.5" cy="10.5" r=".9" fill="currentColor" stroke="none"/><circle cx="9.5" cy="14.5" r=".9" fill="currentColor" stroke="none"/><path d="M14 13.5c1.2.9 2.4.9 3.5 0"/>',
+  lensVig: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="5"/><path d="M12 3.5v3.5M12 17v3.5M3.5 12H7M17 12h3.5"/>',
+  fringe: '<circle cx="10.5" cy="12" r="6"/><circle cx="13.5" cy="12" r="6" stroke-dasharray="2 2.5"/>',
+  distortion: '<path d="M4 6c5.33 1.6 10.67 1.6 16 0M4 18c5.33-1.6 10.67-1.6 16 0M6 4c1.6 5.33 1.6 10.67 0 16M18 4c-1.6 5.33-1.6 10.67 0 16"/>',
+  lensBlur: '<circle cx="12" cy="12" r="8.5"/><path d="m12 3.5 3.5 6.5M20.2 9.8 13 11.5M17.5 18.5l-4.5-5.5M7.2 19.4 10 12.5M3.6 10.5 10.5 10"/>',
   /* adjustments: the tone family shares one 8.5 circle */
   exposure: '<circle cx="12" cy="12" r="8.5"/><path d="M6 18 18 6"/><path d="M7.25 9.25h3.5M9 7.5V11M13.25 14.75h3.5"/>',
   contrast: '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/>',
@@ -802,8 +872,11 @@ const ICONS = {
   saturation: '<path d="M12 3.5c3.25 4.1 6 7.4 6 10.6a6 6 0 0 1-12 0c0-3.2 2.75-6.5 6-10.6z"/><path d="M12 3.5c3.25 4.1 6 7.4 6 10.6a6 6 0 0 1-6 6z" fill="currentColor" stroke="none"/>',
 };
 
-/* every adjustment, in row order. group = where it is stored (schema: settings.light / settings.color)
-   and the editor tab that holds it. */
+const MIX_COLORS = ['Red', 'Orange', 'Yellow', 'Green', 'Aqua', 'Blue', 'Purple', 'Magenta'];
+const MIX_HUES = [0, 30, 60, 120, 180, 240, 280, 320];
+/* every adjustment, in row order. group = where it is stored (settings.light, settings.color, settings.effects ...),
+   tab = the editor tab that holds it, hidden = set from a sub-panel or the photo instead of the tool row.
+   Every value is 0 when untouched, and 0 renders exactly as before. */
 const SLIDERS = [
   { key: 'exposure', group: 'light', min: -4, max: 4, step: 0.05 },
   { key: 'contrast', group: 'light', min: -100, max: 100, step: 1 },
@@ -815,7 +888,27 @@ const SLIDERS = [
   { key: 'tint', group: 'color', min: -100, max: 100, step: 1, scale: 'tint' },
   { key: 'vibrance', group: 'color', min: -100, max: 100, step: 1 },
   { key: 'saturation', group: 'color', min: -100, max: 100, step: 1 },
+  { key: 'clarity', group: 'effects', min: -100, max: 100, step: 1 },
+  { key: 'texture', group: 'effects', min: -100, max: 100, step: 1 },
+  { key: 'dehaze', group: 'effects', min: -100, max: 100, step: 1 },
+  { key: 'vignette', group: 'effects', min: -100, max: 100, step: 1 },
+  { key: 'grain', group: 'effects', min: 0, max: 100, step: 1 },
+  { key: 'grainSize', group: 'effects', min: -100, max: 100, step: 1 },
+  { key: 'sharpen', group: 'detail', min: 0, max: 100, step: 1 },
+  { key: 'noise', group: 'detail', min: 0, max: 100, step: 1 },
+  { key: 'lensVig', group: 'optics', min: -100, max: 100, step: 1 },
+  { key: 'fringe', group: 'optics', min: -100, max: 100, step: 1 },
+  { key: 'distortion', group: 'optics', min: -100, max: 100, step: 1 },
+  { key: 'lensBlur', group: 'blur', min: 0, max: 100, step: 1 },
+  { key: 'blurX', group: 'blur', min: -50, max: 50, step: 0.1, hidden: true },
+  { key: 'blurY', group: 'blur', min: -50, max: 50, step: 0.1, hidden: true },
+  { key: 'blurR', group: 'blur', min: -100, max: 100, step: 1, hidden: true },
+  ...['H', 'S', 'L'].flatMap((a) => MIX_COLORS.map((c, i) => ({ key: 'mix' + a + c, group: 'mixer', tab: 'color', min: -100, max: 100, step: 1, hidden: true, mix: [a, i] }))),
+  ...[['gShH', 'h'], ['gShS', 's'], ['gMidH', 'h'], ['gMidS', 's'], ['gHiH', 'h'], ['gHiS', 's'], ['gBal', 'b'], ['gBlend', 'b']].map(([key, k]) =>
+    k === 'h' ? { key, group: 'grading', tab: 'color', min: 0, max: 360, step: 1, ticks: 72, majorStep: 60, scale: 'hue', hidden: true }
+      : k === 's' ? { key, group: 'grading', tab: 'color', min: 0, max: 100, step: 1, hidden: true } : { key, group: 'grading', tab: 'color', min: -100, max: 100, step: 1, hidden: true }),
 ];
+for (const d of SLIDERS) d.tab = d.tab || ({ light: 'light', color: 'color' }[d.group] || 'effects');
 const BY_KEY = Object.fromEntries(SLIDERS.map((d) => [d.key, d]));
 const DEFAULTS = Object.fromEntries(SLIDERS.map((s) => [s.key, 0]));
 /* crop, in the oriented image (after flip, then rot): centre and size as fractions
@@ -961,6 +1054,7 @@ const FS = `#version 300 es
 precision highp float;
 in vec2 uv; out vec4 o;
 uniform sampler2D img; uniform bool orig;
+uniform sampler2D blurS, blurM, blurL;   // the same image blurred: about 1/4, 1/12 and 1/40 of its size
 uniform vec4 split;  // screen-space before/after divider: cos, sin of the on-screen rotation, flip, offset in px (huge negative = off)
 uniform vec2 size;   // image size in px
 uniform float ev;    // exposure, stops
@@ -968,13 +1062,73 @@ uniform float con;   // contrast, -0.6..0.6
 uniform vec4 tone;   // highlights, shadows, whites, blacks, each -1..1
 uniform vec2 wb;     // temperature, tint, each -1..1
 uniform vec2 col;    // vibrance, saturation, each -1..1
+uniform vec3 optics; // distortion, chromatic aberration, lens vignetting, each -1..1
+uniform vec2 detail; // sharpening, noise reduction, 0..1
+uniform vec3 fx;     // clarity, texture, dehaze, each -1..1
+uniform vec4 lens;   // lens blur amount 0..1, focus point (uv), focus radius (fraction of the long side)
+uniform vec4 vg;     // vignette -1..1, grain 0..1, grain size -1..1, on
+uniform vec4 crop1;  // cos, sin of the crop rotation, flip: where the vignette's frame is
+uniform vec4 crop2;  // crop centre and half size, px of the oriented image
+uniform bool mixOn; uniform float mixH[8]; uniform float mixS[8]; uniform float mixL[8];   // colour mixer, -1..1 per hue
+uniform vec4 grade1; // shadows hue (0..1), sat, highlights hue, sat
+uniform vec4 grade2; // midtones hue, sat, balance -1..1, blending -1..1
 const vec3 LW = vec3(.2126, .7152, .0722);
 vec3 toLinear(vec3 c) { return mix(c / 12.92, pow((c + .055) / 1.055, vec3(2.4)), step(.04045, c)); }
 vec3 toSrgb(vec3 c) { c = clamp(c, 0., 1.); return mix(c * 12.92, 1.055 * pow(c, vec3(1. / 2.4)) - .055, step(.0031308, c)); }
+vec3 rgb2hsv(vec3 c) {
+  vec4 K = vec4(0., -1. / 3., 2. / 3., -1.);
+  vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+  vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+  float d = q.x - min(q.w, q.y);
+  return vec3(abs(q.z + (q.w - q.y) / (6. * d + 1e-10)), d / (q.x + 1e-10), q.x);
+}
+vec3 hsv2rgb(vec3 c) { vec3 p = abs(fract(c.xxx + vec3(1., 2. / 3., 1. / 3.)) * 6. - 3.); return c.z * mix(vec3(1.), clamp(p - 1., 0., 1.), c.y); }
+float hash(vec2 p) { p = fract(p * vec2(123.34, 456.21)); p += dot(p, p + 45.32); return fract(p.x * p.y); }
+float noise(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f);
+  return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y); }
+// how far the contrast curve and the light gains move a blurred neighbourhood, so local effects compare like with like
+float localP(vec3 srgb, vec3 gn, float c) { float y = dot(toLinear(srgb) * gn, LW); y = .18 * pow(max(y, 1e-6) / .18, 1. + c); return pow(min(y, 4.), 1. / 2.2); }
 void main() {
   vec4 t = texture(img, uv);
   if (orig || split.z * (uv.x - .5) * size.x * split.x - (uv.y - .5) * size.y * split.y < split.w) { o = vec4(t.rgb, 1.); return; }
-  vec3 l = toLinear(t.rgb);
+  vec2 st = uv;                                   // where to read the photo (lens distortion moves it)
+  vec2 asp = size / max(size.x, size.y);
+  if (optics.x != 0.) {                           // + corrects barrel, - corrects pincushion; corners stay filled
+    vec2 c = (uv - .5) * asp; float r2 = dot(c, c) / dot(asp * .5, asp * .5);
+    float k = optics.x * .3;
+    st = .5 + (uv - .5) * (1. + k * r2) / (k > 0. ? 1. + k : 1.);
+    t = texture(img, st);
+  }
+  if (optics.y != 0.) {                           // lateral chromatic aberration: scale red and blue against green
+    t.r = texture(img, .5 + (st - .5) * (1. + optics.y * .004)).r;
+    t.b = texture(img, .5 + (st - .5) * (1. - optics.y * .004)).b;
+  }
+  vec3 c0 = t.rgb;
+  if (detail.y > 0.) {                            // noise reduction: edge-preserving 3 x 3, colour noise from a soft copy
+    vec2 px = 1.5 / size; vec3 acc = vec3(0.); float ws = 0., sg = .002 + detail.y * .03;
+    for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) {
+      vec3 s = texture(img, st + vec2(i, j) * px).rgb, d = s - t.rgb;
+      float w = exp(-dot(d, d) / sg); acc += s * w; ws += w;
+    }
+    vec3 dn = acc / ws, bl = texture(blurS, st).rgb;
+    float yl = dot(dn, LW);
+    dn = yl + mix(dn - yl, bl - dot(bl, LW), detail.y * .7);
+    c0 = mix(c0, dn, detail.y);
+  }
+  if (detail.x > 0.) {                            // sharpening: unsharp mask on luminance, limited to avoid halos
+    vec2 px = 1. / size;
+    vec3 nb = (texture(img, st + vec2(px.x, 0.)).rgb + texture(img, st - vec2(px.x, 0.)).rgb
+             + texture(img, st + vec2(0., px.y)).rgb + texture(img, st - vec2(0., px.y)).rgb) * .25;
+    c0 += clamp(dot(t.rgb - nb, LW), -.08, .08) * detail.x * 1.8;
+  }
+  if (lens.x > 0.) {                              // lens blur: sharp inside the focus area, deepening outside it
+    float d = length((st - lens.yz) * asp);
+    float w = smoothstep(lens.w, lens.w * 1.9 + .03, d) * lens.x;
+    vec3 b = mix(texture(blurM, st).rgb, texture(blurL, st).rgb, smoothstep(.35, 1., w));
+    c0 = mix(c0, b, smoothstep(0., .35, w));
+  }
+  vec3 l = toLinear(c0);
+  if (optics.z != 0.) { vec2 c = (st - .5) * asp; l *= 1. + optics.z * .8 * dot(c, c) / dot(asp * .5, asp * .5); }
 
   // white balance: warm = more red, less blue; tint + = magenta (less green). Gains keep brightness.
   vec3 g = vec3(exp2(.35 * wb.x + .12 * wb.y), exp2(-.30 * wb.y), exp2(-.35 * wb.x + .12 * wb.y));
@@ -982,6 +1136,13 @@ void main() {
 
   l *= exp2(ev);                                             // exposure in stops
   l = .18 * pow(max(l, vec3(1e-6)) / .18, vec3(1. + con));   // contrast pivots on middle grey
+
+  if (fx.z != 0.) {                               // dehaze: the haze model I = J t + A (1 - t), A = 1, haze from the local dark channel
+    vec3 bl = toLinear(texture(blurM, st).rgb) * g / dot(g, LW) * exp2(ev);
+    float dc = min(min(min(bl.r, bl.g), bl.b), min(min(l.r, l.g), l.b));   // never more haze than the pixel itself can hold
+    if (fx.z > 0.) { float h = clamp(dc * fx.z * .7, 0., .6); l = max(l - h, 0.) / (1. - h); }
+    else l = mix(l, vec3(.6), -fx.z * .3);
+  }
 
   // tone on luminance in a perceptual space, then scale RGB by the change (keeps hue)
   float y = max(dot(l, LW), 1e-6);
@@ -991,6 +1152,8 @@ void main() {
   p += tone.y * .30 * q * (1. - smoothstep(0., .65, q)) * 2.5;                  // shadows
   p += tone.z * .12 * smoothstep(.60, 1., q);                                   // whites
   p += tone.w * .10 * (1. - smoothstep(0., .35, q));                            // blacks
+  if (fx.x != 0.) p += fx.x * .6 * (q - localP(texture(blurL, st).rgb, g / dot(g, LW) * exp2(ev), con)) * (1. - abs(2. * q - 1.) * .7);   // clarity: mid-scale local contrast
+  if (fx.y != 0.) p += fx.y * .7 * clamp(q - localP(texture(blurS, st).rgb, g / dot(g, LW) * exp2(ev), con), -.08, .08);                // texture: fine detail, capped so edges don't halo
   l *= pow(max(p, 0.), 2.2) / y;
 
   // vibrance boosts muted colours more than saturated ones; saturation is uniform
@@ -999,8 +1162,71 @@ void main() {
   float Y = dot(l, LW);
   l = mix(vec3(Y), l, 1. + col.x * (1. - s));
   l = mix(vec3(Y), l, 1. + col.y);
+
+  if (mixOn) {                                    // colour mixer: hue, saturation, luminance per colour, blended between neighbours
+    vec3 hsv = rgb2hsv(pow(clamp(l, 0., 1.), vec3(1. / 2.2)));
+    float h = hsv.x * 360.;
+    float C[9] = float[9](0., 30., 60., 120., 180., 240., 280., 320., 360.);
+    int i0 = 7;
+    for (int i = 0; i < 8; i++) if (h >= C[i] && h < C[i + 1]) i0 = i;
+    int i1 = i0 == 7 ? 0 : i0 + 1;
+    float f = (h - C[i0]) / (C[i0 + 1] - C[i0]);
+    float w = smoothstep(.03, .25, hsv.y);
+    hsv.x = fract(hsv.x + mix(mixH[i0], mixH[i1], f) * w * 30. / 360.);
+    hsv.y = clamp(hsv.y * (1. + mix(mixS[i0], mixS[i1], f) * w), 0., 1.);
+    vec3 c = hsv2rgb(hsv) * (1. + mix(mixL[i0], mixL[i1], f) * w * .35 * hsv.y);
+    l = pow(max(c, 0.), vec3(2.2));
+  }
+  if (grade1.y > 0. || grade1.w > 0. || grade2.y > 0.) {   // colour grading: tint shadows, midtones, highlights; luminance kept
+    vec3 c = pow(max(l, 0.), vec3(1. / 2.2));
+    float lum = dot(c, LW), m = .5 + grade2.z * .25, sw = .35 + (grade2.w + 1.) * .2;
+    float wS = 1. - smoothstep(m - sw, m, lum), wH = smoothstep(m, m + sw, lum), wM = max(0., 1. - wS - wH);
+    vec3 d = (hsv2rgb(vec3(grade1.x, 1., 1.)) - .5) * grade1.y * wS + (hsv2rgb(vec3(grade2.x, 1., 1.)) - .5) * grade2.y * wM
+           + (hsv2rgb(vec3(grade1.z, 1., 1.)) - .5) * grade1.w * wH;
+    d *= .35; d -= dot(d, LW);
+    l = pow(max(c + d, 0.), vec3(2.2));
+  }
+  if (vg.w > 0.) {                                // vignette (around the crop frame) and film grain
+    vec3 c = pow(max(l, 0.), vec3(1. / 2.2));
+    if (vg.x != 0.) {
+      vec2 a = (uv - .5) * size; a.x *= crop1.z;
+      vec2 r = vec2(a.x * crop1.x - a.y * crop1.y, a.x * crop1.y + a.y * crop1.x) - crop2.xy;
+      float v = smoothstep(.45, 1.5, length(r / crop2.zw));
+      c = vg.x < 0. ? c * (1. + vg.x * v) : mix(c, vec3(1.), vg.x * v);
+    }
+    if (vg.y > 0.) {                              // grain cells follow the image, so preview and export match
+      vec2 gp = (uv - .5) * asp * 900. * exp2(-vg.z * 1.2);
+      float n = noise(gp) * .65 + noise(gp * 2.17 + 13.1) * .35 - .5;
+      c += n * vg.y * .22 * (.4 + .6 * (1. - abs(2. * dot(c, LW) - 1.)));
+    }
+    l = pow(max(c, 0.), vec3(2.2));
+  }
   o = vec4(toSrgb(max(l, 0.)), 1.);
 }`;
+// a soft copy of the image at 1/f of its size: halve until close, then three box-blur passes
+function blurCopy(src, f) {
+  const w = Math.max(4, Math.round(src.width / f)), h = Math.max(4, Math.round(src.height / f));
+  let cur = src, cw = src.width, ch = src.height;
+  while (cw > w * 2 && ch > h * 2) {
+    cw = Math.ceil(cw / 2); ch = Math.ceil(ch / 2);
+    const c = document.createElement('canvas'); c.width = cw; c.height = ch;
+    c.getContext('2d').drawImage(cur, 0, 0, cw, ch); if (cur !== src) cur.width = cur.height = 0; cur = c;
+  }
+  const out = document.createElement('canvas'); out.width = w; out.height = h;
+  const g = out.getContext('2d'); g.imageSmoothingQuality = 'high'; g.drawImage(cur, 0, 0, w, h); if (cur !== src) cur.width = cur.height = 0;
+  const id = g.getImageData(0, 0, w, h), d = id.data, tmp = new Uint8ClampedArray(d.length);
+  const pass = (a, b, dx, dy, n, m) => {   // radius-1 box blur along one axis
+    for (let y = 0; y < m; y++) for (let x = 0; x < n; x++) {
+      const i = (y * n + x) * 4, x0 = Math.max(0, x - dx), x1 = Math.min(n - 1, x + dx), y0 = Math.max(0, y - dy), y1 = Math.min(m - 1, y + dy);
+      const i0 = (y0 * n + x0) * 4, i1 = (y1 * n + x1) * 4;
+      for (let k = 0; k < 3; k++) b[i + k] = (a[i0 + k] + a[i + k] + a[i1 + k]) / 3;
+      b[i + 3] = 255;
+    }
+  };
+  for (let r = 0; r < 3; r++) { pass(d, tmp, 1, 0, w, h); pass(tmp, d, 0, 1, w, h); }
+  g.putImageData(id, 0, 0);
+  return out;
+}
 class Renderer {
   constructor(canvas, keep = false) {
     const gl = canvas.getContext('webgl2', { premultipliedAlpha: false, preserveDrawingBuffer: keep, antialias: false, alpha: false });
@@ -1019,21 +1245,29 @@ class Renderer {
     gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-    this.u = Object.fromEntries(['ev', 'con', 'tone', 'wb', 'col', 'orig', 'split', 'size'].map((n) => [n, gl.getUniformLocation(pr, n)]));
-    gl.uniform1i(gl.getUniformLocation(pr, 'img'), 0);
-    this.tex = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, this.tex);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    this.u = Object.fromEntries(['ev', 'con', 'tone', 'wb', 'col', 'orig', 'split', 'size', 'optics', 'detail', 'fx', 'lens', 'vg', 'crop1', 'crop2',
+      'mixOn', 'mixH', 'mixS', 'mixL', 'grade1', 'grade2'].map((n) => [n, gl.getUniformLocation(pr, n)]));
+    this.texs = ['img', 'blurS', 'blurM', 'blurL'].map((n, i) => {
+      gl.uniform1i(gl.getUniformLocation(pr, n), i);
+      gl.activeTexture(gl.TEXTURE0 + i);
+      const tx = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tx);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      return tx;
+    });
     this.maxTex = gl.getParameter(gl.MAX_TEXTURE_SIZE);
   }
   setImage(src) {
     const gl = this.gl;
-    gl.bindTexture(gl.TEXTURE_2D, this.tex);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
-    this.canvas.width = src.width; this.canvas.height = src.height;
+    [src, blurCopy(src, 4), blurCopy(src, 12), blurCopy(src, 40)].forEach((im, i) => {
+      gl.activeTexture(gl.TEXTURE0 + i); gl.bindTexture(gl.TEXTURE_2D, this.texs[i]);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
+      if (i) im.width = im.height = 0;
+    });
+    this.canvas.width = src.width; this.canvas.height = src.height; this.w = src.width; this.h = src.height;
     gl.viewport(0, 0, src.width, src.height);
     gl.uniform2f(this.u.size, src.width, src.height);
   }
@@ -1045,6 +1279,21 @@ class Renderer {
     gl.uniform4f(this.u.tone, v('highlights'), v('shadows'), v('whites'), v('blacks'));
     gl.uniform2f(this.u.wb, v('temp'), v('tint'));
     gl.uniform2f(this.u.col, v('vibrance'), v('saturation'));
+    gl.uniform3f(this.u.optics, v('distortion'), v('fringe'), v('lensVig'));
+    gl.uniform2f(this.u.detail, v('sharpen'), v('noise'));
+    gl.uniform3f(this.u.fx, v('clarity'), v('texture'), v('dehaze'));
+    gl.uniform4f(this.u.lens, v('lensBlur'), .5 + v('blurX'), .5 + v('blurY'), .2 * Math.pow(2, v('blurR') * 2));
+    gl.uniform4f(this.u.vg, v('vignette'), v('grain'), v('grainSize'), s.vignette || s.grain ? 1 : 0);
+    const c = s.crop || { rot: 0, angle: 0, flip: false, cx: 0, cy: 0, w: 1, h: 1 }, th = (c.rot + c.angle) * Math.PI / 180;
+    const [W, H] = c.rot % 180 ? [this.h, this.w] : [this.w, this.h];
+    gl.uniform4f(this.u.crop1, Math.cos(th), Math.sin(th), c.flip ? -1 : 1, 0);
+    gl.uniform4f(this.u.crop2, c.cx * W, c.cy * H, c.w * W / 2, c.h * H / 2);
+    const arr = (p) => new Float32Array(MIX_COLORS.map((n) => v(p + n)));
+    const mH = arr('mixH'), mS = arr('mixS'), mL = arr('mixL');
+    gl.uniform1i(this.u.mixOn, [...mH, ...mS, ...mL].some((x) => x) ? 1 : 0);
+    gl.uniform1fv(this.u.mixH, mH); gl.uniform1fv(this.u.mixS, mS); gl.uniform1fv(this.u.mixL, mL);
+    gl.uniform4f(this.u.grade1, (s.gShH || 0) / 360, v('gShS'), (s.gHiH || 0) / 360, v('gHiS'));
+    gl.uniform4f(this.u.grade2, (s.gMidH || 0) / 360, v('gMidS'), v('gBal'), v('gBlend'));
     gl.uniform1i(this.u.orig, orig ? 1 : 0);
     gl.uniform4f(this.u.split, ...(split || [1, 0, 1, -1e9]));
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -1139,7 +1388,7 @@ sheetEl.addEventListener('pointerup', endSheetDrag);
 sheetEl.addEventListener('pointercancel', endSheetDrag);
 
 const sign = (v) => (v > 0 ? '+' : v < 0 ? '−' : '');
-const fmtValue = (key, v) => key === 'exposure' ? sign(v) + decimal(v, 2) + ' EV' : key === 'angle' ? sign(v) + decimal(v, 1) + '°' : key === 'amount' ? decimal(v, 0) + ' %' : sign(v) + decimal(v, 0);
+const fmtValue = (key, v) => /^g(Sh|Mid|Hi)H$/.test(key) ? decimal(v, 0) + '°' : key === 'exposure' ? sign(v) + decimal(v, 2) + ' EV' : key === 'angle' ? sign(v) + decimal(v, 1) + '°' : key === 'amount' ? decimal(v, 0) + ' %' : sign(v) + decimal(v, 0);
 function once(key) { try { if (localStorage.getItem(key)) return false; localStorage.setItem(key, '1'); return true; } catch (e) { return false; } }
 function sheetNav(title, left, right) {
   return el('div', { className: 'sheet-nav' }, [left || el('span'), el('h2', { textContent: title }), right || el('span')]);
@@ -1377,8 +1626,8 @@ $('#settingsBtn').addEventListener('click', openSettings);
 
 /* ---------- editor state ---------- */
 const state = { photo: null, settings: { ...DEFAULTS, crop: { ...DEFAULT_CROP }, preset: null }, src: null, renderer: null, orig: false, compareLock: false, frame: 0,
-  saveTimer: 0, changed: false, adj: 'exposure', adjByMode: { light: 'exposure', color: 'temp' }, history: [], hIndex: -1, autoPrev: null,
-  mode: 'light', view: { k: 1 }, userPresets: [], selecting: false, selected: new Set(), clipboard: null, split: { on: false, x: 0 }, editingValue: false };
+  saveTimer: 0, changed: false, adj: 'exposure', adjByMode: { light: 'exposure', color: 'temp', effects: 'clarity' }, history: [], hIndex: -1, autoPrev: null,
+  mode: 'light', view: { k: 1 }, userPresets: [], selecting: false, selected: new Set(), clipboard: null, split: { on: false, x: 0 }, editingValue: false, sub: null, mixColor: 0, mixAttr: 'H', gradeRegion: 'Sh', gradeAttr: 'H' };
 const canvas = $('#view');
 function ensureRenderer() {
   if (!state.renderer) state.renderer = new Renderer(canvas);
@@ -1412,10 +1661,10 @@ function crossfade() {
   fadeTimer = setTimeout(() => { fadeCv.hidden = true; fadeCv.width = fadeCv.height = 1; }, 320);
 }
 
-/* settings <-> stored shape { light: {...}, color: {...} } */
+/* settings <-> stored shape { light: {...}, color: {...}, effects: {...}, ... }; older records simply lack the new groups */
 function toStored(s) {
   const out = { light: {}, color: {}, crop: { ...s.crop }, preset: s.preset ? { ...s.preset } : null };
-  for (const d of SLIDERS) out[d.group][d.key] = s[d.key];
+  for (const d of SLIDERS) (out[d.group] = out[d.group] || {})[d.key] = s[d.key];
   return out;
 }
 function fromStored(stored) {
@@ -1451,18 +1700,27 @@ const autoBtn = el('button', { className: 'tool auto', type: 'button', id: 'auto
 autoBtn.setAttribute('aria-pressed', 'false');
 autoBtn.append(ringSvg(), icon('sparkle'));
 const toolGroups = {};
-for (const g of ['light', 'color']) {
+const TOOL_TABS = ['light', 'color', 'effects'];
+for (const g of TOOL_TABS) {
   const row = $('#row-' + g);
   const grp = el('div', { className: 'tool-group', role: 'radiogroup' });
-  grp.dataset.i18nAria = g === 'light' ? 'tLight' : 'tColor';
-  for (const d of SLIDERS.filter((x) => x.group === g)) {
+  grp.dataset.i18nAria = { light: 'tLight', color: 'tColor', effects: 'tEffects' }[g];
+  let last = null;
+  for (const d of SLIDERS.filter((x) => x.tab === g && !x.hidden)) {
+    if (last && last !== d.group) grp.append(el('span', { className: 'tool-sep', ariaHidden: 'true' }));   // Effects: effects | detail | optics | blur
+    last = d.group;
     const b = el('button', { className: 'tool', type: 'button', role: 'radio', id: 'adj-' + d.key });
     b.dataset.key = d.key;
     b.append(ringSvg(), icon(d.key));
     b.addEventListener('click', () => selectAdj(d.key, true));
     grp.append(b);
   }
-  if (g === 'light') row.append(autoBtn, el('span', { className: 'tool-sep', ariaHidden: 'true' }), grp); else row.append(grp);
+  if (g === 'light') row.append(autoBtn, el('span', { className: 'tool-sep', ariaHidden: 'true' }), grp);
+  else if (g === 'color') {   // Mixer and Grading open their own panels
+    const open = (pane, ic) => { const b = el('button', { className: 'tool pane-open', type: 'button', id: 'open-' + pane }, [ringSvg(), icon(ic)]);
+      b.dataset.i18nAria = pane === 'mixer' ? 'mixer' : 'grading'; b.addEventListener('click', () => openSub(pane)); return b; };
+    row.append(grp, el('span', { className: 'tool-sep', ariaHidden: 'true' }), open('mixer', 'mixer'), open('grading', 'grading'));
+  } else row.append(grp);
   grp.addEventListener('keydown', (e) => {
     if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
     e.preventDefault(); stepTool(e.key === 'ArrowRight' ? 1 : -1);
@@ -1473,16 +1731,16 @@ for (const g of ['light', 'color']) {
   row.addEventListener('scroll', () => {
     clearTimeout(timer);
     timer = setTimeout(() => {
-      if (state.mode !== g) return;
+      if (state.mode !== g || state.sub) return;
       const r = row.getBoundingClientRect(), cx = r.left + r.width / 2;
       let best = null, bd = Infinity;
-      for (const b of grp.children) { const br = b.getBoundingClientRect(); const dd = Math.abs(br.left + br.width / 2 - cx); if (dd < bd) { bd = dd; best = b; } }
+      for (const b of grp.querySelectorAll('.tool[data-key]')) { const br = b.getBoundingClientRect(); const dd = Math.abs(br.left + br.width / 2 - cx); if (dd < bd) { bd = dd; best = b; } }
       if (best && bd < 40 && best.dataset.key !== state.adj) selectAdj(best.dataset.key, false);
     }, 120);
   }, { passive: true });
   toolGroups[g] = grp;
 }
-const allTools = () => [...toolGroups.light.children, ...toolGroups.color.children];
+const allTools = () => TOOL_TABS.flatMap((g) => [...toolGroups[g].querySelectorAll('.tool[data-key]')]);
 function centerTool(key, smooth) {
   const b = document.getElementById('adj-' + key), row = b && b.closest('.tool-row');
   if (!row || row.classList.contains('out')) return;
@@ -1491,7 +1749,7 @@ function centerTool(key, smooth) {
 }
 function selectAdj(key, scroll) {
   state.adj = key;
-  state.adjByMode[BY_KEY[key].group] = key;
+  if (!BY_KEY[key].hidden) state.adjByMode[BY_KEY[key].tab] = key;
   for (const b of allTools()) {
     const on = b.dataset.key === key;
     b.setAttribute('aria-checked', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1;
@@ -1501,8 +1759,9 @@ function selectAdj(key, scroll) {
 }
 // next or previous tool in the current tab (swipe on the photo, arrow keys)
 function stepTool(dir) {
-  if (state.mode === 'light' || state.mode === 'color') {
-    const keys = SLIDERS.filter((d) => d.group === state.mode).map((d) => d.key);
+  if (state.sub === 'mixer') { selectMix(clamp(state.mixColor + dir, 0, 7), state.mixAttr); return; }
+  if (TOOL_TABS.includes(state.mode) && !state.sub) {
+    const keys = SLIDERS.filter((d) => d.tab === state.mode && !d.hidden).map((d) => d.key);
     const i = keys.indexOf(state.adj), j = clamp(i + dir, 0, keys.length - 1);
     if (j !== i) selectAdj(keys[j], true);
   } else if (state.mode === 'looks') {
@@ -1512,6 +1771,127 @@ function stepTool(dir) {
     if (ids[j] !== cur) { choosePreset(ids[j] || null); const tile = presetRow.querySelector(`.ptile[data-id="${ids[j]}"]`); if (tile) tile.scrollIntoView({ inline: 'center', block: 'nearest', behavior: reduceMotion() ? 'auto' : 'smooth' }); }
   }
 }
+
+/* ---------- Color > Mixer (8 colours x hue, saturation, luminance) and Color > Grading ---------- */
+const mixSw = $('#mixSwatches'), mixAttr = $('#mixAttr'), gradeRegions = $('#gradeRegions'), gradeAttr = $('#gradeAttr');
+MIX_COLORS.forEach((c, i) => {
+  const b = el('button', { className: 'swatch', type: 'button', role: 'radio' });
+  b.style.setProperty('--sw', `hsl(${MIX_HUES[i]} 80% 55%)`); b.dataset.i = i; b.dataset.i18nAria = 'col.' + c;
+  b.addEventListener('click', () => selectMix(i, state.mixAttr));
+  mixSw.append(b);
+});
+for (const a of ['H', 'S', 'L']) {
+  const b = el('button', { type: 'button' }); b.dataset.a = a; b.dataset.i18n = 'attr.' + a; b.textContent = t('attr.' + a);
+  b.addEventListener('click', () => selectMix(state.mixColor, a)); mixAttr.append(b);
+}
+for (const r of ['Sh', 'Mid', 'Hi', 'Bal', 'Blend']) {
+  const b = el('button', { className: 'chip', type: 'button', role: 'radio' }); b.dataset.r = r; b.dataset.i18n = 'reg.' + r; b.textContent = t('reg.' + r);
+  b.addEventListener('click', () => selectGrade(r, state.gradeAttr)); gradeRegions.append(b);
+}
+for (const a of ['H', 'S']) {
+  const b = el('button', { type: 'button' }); b.dataset.a = a; b.dataset.i18n = 'attr.' + a; b.textContent = t('attr.' + a);
+  b.addEventListener('click', () => selectGrade(state.gradeRegion, a)); gradeAttr.append(b);
+}
+const gradeKey = (r, a) => (r === 'Bal' ? 'gBal' : r === 'Blend' ? 'gBlend' : 'g' + r + a);
+function selectMix(i, a) { state.mixColor = i; state.mixAttr = a; selectAdj('mix' + a + MIX_COLORS[i], false); }
+function selectGrade(r, a) { state.gradeRegion = r; state.gradeAttr = a; selectAdj(gradeKey(r, a), false); }
+function openSub(pane) {
+  state.sub = pane; showPane();
+  if (pane === 'mixer') selectMix(state.mixColor, state.mixAttr); else selectGrade(state.gradeRegion, state.gradeAttr);
+  const first = $('#pane-' + pane + ' .sub-back'); if (first) first.focus({ preventScroll: true });
+}
+function closeSub() {
+  const was = state.sub; state.sub = null; showPane();
+  selectAdj(state.adjByMode.color, false); centerTool(state.adj, false);
+  const b = $('#open-' + was); if (b) b.focus({ preventScroll: true });
+}
+document.querySelectorAll('.sub-back').forEach((b) => b.addEventListener('click', closeSub));
+function showPane() {
+  const active = state.mode === 'color' && state.sub ? state.sub : state.mode;
+  for (const pane of $('#tray').querySelectorAll('[data-pane]')) {
+    const on = pane.dataset.pane === active;
+    pane.classList.toggle('out', !on);
+    if (on) pane.removeAttribute('inert'); else pane.setAttribute('inert', '');
+  }
+}
+function syncSubpanes() {
+  for (const b of mixSw.children) {
+    const i = +b.dataset.i, on = i === state.mixColor;
+    b.setAttribute('aria-checked', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1;
+    b.classList.toggle('edited', ['H', 'S', 'L'].some((a) => state.settings['mix' + a + MIX_COLORS[i]] !== 0));
+  }
+  for (const b of mixAttr.children) b.setAttribute('aria-pressed', b.dataset.a === state.mixAttr ? 'true' : 'false');
+  for (const b of gradeRegions.children) {
+    const r = b.dataset.r;
+    b.setAttribute('aria-checked', r === state.gradeRegion ? 'true' : 'false');
+    b.setAttribute('aria-pressed', r === state.gradeRegion ? 'true' : 'false');
+    const keys = r === 'Bal' || r === 'Blend' ? [gradeKey(r)] : ['g' + r + 'S'];
+    b.classList.toggle('edited', keys.some((k) => state.settings[k] !== 0));
+  }
+  gradeAttr.style.visibility = state.gradeRegion === 'Bal' || state.gradeRegion === 'Blend' ? 'hidden' : '';
+  for (const b of gradeAttr.children) b.setAttribute('aria-pressed', b.dataset.a === state.gradeAttr ? 'true' : 'false');
+  const anyMix = SLIDERS.some((d) => d.group === 'mixer' && state.settings[d.key] !== 0), anyGrade = ['gShS', 'gMidS', 'gHiS'].some((k) => state.settings[k] !== 0);
+  for (const [id, on] of [['#open-mixer', anyMix], ['#open-grading', anyGrade]]) {
+    const b = $(id), arc = b.querySelector('.arc');
+    arc.setAttribute('stroke-dasharray', on ? `${RING_C} ${RING_C}` : `0 ${RING_C}`); arc.style.visibility = on ? 'visible' : 'hidden';
+  }
+  $('#swatchHint').style.background = `hsl(${MIX_HUES[state.mixColor]} 80% 55%)`;
+}
+mixSw.addEventListener('keydown', (e) => {
+  if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+  e.preventDefault(); selectMix(clamp(state.mixColor + (e.key === 'ArrowRight' ? 1 : -1), 0, 7), state.mixAttr);
+  mixSw.children[state.mixColor].focus();
+});
+
+/* Effects > Lens Blur: the focus area is set on the photo (drag the centre, drag the ring for its size) */
+const focusEl = $('#focus');
+function imgToStage(u, v) {   // a point of the un-oriented image (0..1) -> stage px
+  const c = state.settings.crop, th = rad(c.rot + c.angle), k = state.view.k, b = state.view.box;
+  const cw = state.src.width * k, ch = state.src.height * k;
+  const x = (u - .5) * cw * (c.flip ? -1 : 1), y = (v - .5) * ch;
+  const px = parseFloat(canvas.style.left) + cw / 2 + x * Math.cos(th) - y * Math.sin(th);
+  const py = parseFloat(canvas.style.top) + ch / 2 + x * Math.sin(th) + y * Math.cos(th);
+  return { x: b.l + b.w / 2 + zoom.x + zoom.s * (px - b.w / 2), y: b.t + b.h / 2 + zoom.y + zoom.s * (py - b.h / 2) };
+}
+function stageToImg(sx, sy) {
+  const c = state.settings.crop, th = rad(c.rot + c.angle), k = state.view.k, b = state.view.box;
+  const cw = state.src.width * k, ch = state.src.height * k;
+  const px = (sx - b.l - b.w / 2 - zoom.x) / zoom.s + b.w / 2 - parseFloat(canvas.style.left) - cw / 2;
+  const py = (sy - b.t - b.h / 2 - zoom.y) / zoom.s + b.h / 2 - parseFloat(canvas.style.top) - ch / 2;
+  const x = px * Math.cos(th) + py * Math.sin(th), y = -px * Math.sin(th) + py * Math.cos(th);
+  return { u: x / cw * (c.flip ? -1 : 1) + .5, v: y / ch + .5 };
+}
+const focusRadiusPx = () => .2 * Math.pow(2, state.settings.blurR / 50) * Math.max(state.src.width, state.src.height) * state.view.k * zoom.s;
+function syncFocus() {
+  const on = state.mode === 'effects' && state.adj === 'lensBlur' && !!state.src && !state.orig && !!state.view.box;
+  focusEl.hidden = !on;
+  if (!on) return;
+  const p = imgToStage(.5 + state.settings.blurX / 100, .5 + state.settings.blurY / 100), r = focusRadiusPx();
+  Object.assign(focusEl.style, { left: p.x + 'px', top: p.y + 'px', width: 2 * r + 'px', height: 2 * r + 'px' });
+  focusEl.classList.toggle('dim', state.settings.lensBlur === 0);
+}
+let fdrag = null;
+focusEl.addEventListener('pointerdown', (e) => {
+  e.stopPropagation(); focusEl.setPointerCapture(e.pointerId);
+  const r = focusEl.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  const d = Math.hypot(e.clientX - cx, e.clientY - cy);
+  fdrag = { ring: Math.abs(d - r.width / 2) < 22 && d > 26, x: e.clientX, y: e.clientY, bx: state.settings.blurX, by: state.settings.blurY, r0: focusRadiusPx(), d0: d, cx, cy };
+  focusEl.classList.add('dragging');
+});
+focusEl.addEventListener('pointermove', (e) => {
+  if (!fdrag) return;
+  if (fdrag.ring) {
+    const d = Math.max(12, Math.hypot(e.clientX - fdrag.cx, e.clientY - fdrag.cy));
+    const scale = d / Math.max(1, fdrag.d0), base = .2 * Math.max(state.src.width, state.src.height) * state.view.k * zoom.s;
+    state.settings.blurR = clamp(Math.round(50 * Math.log2(fdrag.r0 * scale / base)), -100, 100);
+  } else {
+    const sr = stage.getBoundingClientRect(), p = stageToImg(e.clientX - sr.left, e.clientY - sr.top);
+    state.settings.blurX = Number(clamp((p.u - .5) * 100, -50, 50).toFixed(1)); state.settings.blurY = Number(clamp((p.v - .5) * 100, -50, 50).toFixed(1));
+  }
+  state.autoPrev = null; syncFocus(); requestDraw(); scheduleSave();
+});
+const endFocus = () => { if (!fdrag) return; fdrag = null; focusEl.classList.remove('dragging'); commit(); };
+focusEl.addEventListener('pointerup', endFocus); focusEl.addEventListener('pointercancel', endFocus);
 
 /* ---------- the ruler: drag sideways to set the value, double tap to reset ----------
    It drives the selected adjustment, the straighten angle (Crop) or the look's strength (Looks). */
@@ -1650,12 +2030,22 @@ $('#adjValue').addEventListener('click', () => {
 });
 $('#resetBtn').addEventListener('click', () => { setDial(dial().ref || 0); commit(); pulseSnap(); });
 
-const anyIn = (g) => SLIDERS.some((d) => d.group === g && state.settings[d.key] !== 0);
+const anyIn = (g) => SLIDERS.some((d) => d.tab === g && state.settings[d.key] !== 0);
+// a slider's name: mixer and grading names come from their colour or region and attribute
+function adjLabel(key) {
+  const d = BY_KEY[key];
+  if (d && d.mix) return `${t('col.' + MIX_COLORS[d.mix[1]])} · ${t('attr.' + d.mix[0])}`;
+  const g = /^g(Sh|Mid|Hi)([HS])$/.exec(key);
+  if (g) return `${t('reg.' + g[1])} · ${t('attr.' + g[2])}`;
+  return t('adj.' + key);
+}
 function syncControls() {
   const d = dial(), v = dialValue(), ref = d.ref || 0;
   const looks = state.mode === 'looks', pr = activePreset(), noPreset = looks && !pr;
-  $('#adjName').textContent = looks ? (pr ? `${t('adj.amount')} · ${pname(pr)}` : t('chooseLook')) : t('adj.' + d.key);
-  $('#scale').className = 'scale ' + (((state.mode === 'light' || state.mode === 'color') && d.scale) || 'none');
+  $('#adjName').textContent = looks ? (pr ? `${t('adj.amount')} · ${pname(pr)}` : t('chooseLook')) : state.mode === 'crop' ? t('adj.angle') : adjLabel(d.key);
+  const sc = $('#scale'), toolTab = TOOL_TABS.includes(state.mode);
+  sc.className = 'scale ' + ((toolTab && (d.scale || (d.mix && d.mix[0] === 'H' && 'mixhue'))) || 'none');
+  sc.style.background = d.mix && d.mix[0] === 'H' ? `linear-gradient(90deg, hsl(${MIX_HUES[d.mix[1]] - 35} 70% 55%), transparent 50%, hsl(${MIX_HUES[d.mix[1]] + 35} 70% 55%))` : '';
   ruler.setAttribute('aria-valuemin', d.min); ruler.setAttribute('aria-valuemax', d.max);
   ruler.classList.toggle('off', noPreset); ruler.tabIndex = noPreset ? -1 : 0;
   $('#rulerHint').hidden = !noPreset; $('#rulerHint').textContent = noPreset ? t('lookHint') : '';
@@ -1678,14 +2068,16 @@ function syncControls() {
     arc.setAttribute('stroke-dasharray', `${(f * RING_C).toFixed(1)} ${RING_C}`);
     arc.setAttribute('transform', bv < 0 ? 'translate(0 54) scale(1 -1)' : '');
     arc.style.visibility = f === 0 ? 'hidden' : 'visible';
-    b.setAttribute('aria-label', `${t('adj.' + dd.key)}, ${fmtValue(dd.key, bv)}`);
+    b.setAttribute('aria-label', `${adjLabel(dd.key)}, ${fmtValue(dd.key, bv)}`);
   }
+  syncSubpanes(); syncFocus();
   autoBtn.setAttribute('aria-pressed', state.autoPrev ? 'true' : 'false');
   autoBtn.setAttribute('aria-label', state.autoPrev ? t('autoOn') : t('auto'));
   $('#undoBtn').disabled = state.hIndex <= 0;
   $('#redoBtn').disabled = state.hIndex >= state.history.length - 1;
   $('#mode-light').classList.toggle('edited', anyIn('light'));
   $('#mode-color').classList.toggle('edited', anyIn('color'));
+  $('#mode-effects').classList.toggle('edited', anyIn('effects'));
   $('#mode-looks').classList.toggle('edited', !!activePreset());
   $('#mode-crop').classList.toggle('edited', !cropIsIdentity(state.settings.crop));
   drawRuler();
@@ -1736,7 +2128,7 @@ document.addEventListener('keydown', (e) => {
   if (tg instanceof HTMLInputElement || tg === ruler || tg === splitHandle) return;
   if (e.key === ' ' && (tg === document.body || tg === canvas)) { e.preventDefault(); if (!e.repeat) showOrig(true); return; }
   const k = e.key;
-  if (/^[1-4]$/.test(k)) setMode(MODES[+k - 1]);
+  if (/^[1-5]$/.test(k)) setMode(MODES[+k - 1]);
   else if (k === ']') stepTool(1);
   else if (k === '[') stepTool(-1);
   else if ((k === '+' || k === '=') && state.mode !== 'crop') { const v = state.view, s0 = zoom.s; zoomAbout(clamp(s0 * 1.5, 1, MAX_ZOOM), v.box.l + v.box.w / 2, v.box.t + v.box.h / 2, s0, zoom.x, zoom.y); clampZoom(); applyZoom(true); }
@@ -1773,7 +2165,7 @@ function autoSettings(src) {
   const over = ps.filter((p) => p > 1).length / ps.length;
   const deep = ps.filter((p) => p < .15).length / ps.length;
   return {
-    ...DEFAULTS,
+    ...DEFAULTS, ...state.settings,
     exposure: Number(ev.toFixed(2)),
     contrast: 10,
     highlights: over > .005 ? -Math.round(clamp(over * 600, 15, 70)) : 0,
@@ -1887,7 +2279,7 @@ function layout() {
     width: p.w * k + 'px', height: p.h * k + 'px' });
   $('#origBadge').style.top = $('#zoomChip').style.top = R.y + 'px';
   if (cropMode) resetZoom(); else { clampZoom(); applyZoom(false); }
-  placeSplit();
+  placeSplit(); if (typeof syncFocus === 'function') syncFocus();
 }
 if ('ResizeObserver' in window) { const ro = new ResizeObserver(() => layout()); ro.observe(stage); ro.observe($('#edBottom')); } else window.addEventListener('resize', layout);
 
@@ -1899,6 +2291,7 @@ function applyZoom(animate) {
   chip.hidden = !zoomed || state.orig;
   if (zoomed) { chip.replaceChildren(`${decimal(zoom.s, 1)}×`, icon('back', 'i xs')); chip.lastChild.style.transform = 'rotate(-90deg)'; chip.setAttribute('aria-label', `${decimal(zoom.s, 1)}×, ${t('fitScreen')}`); }
   if (state.split.on) { placeSplit(); requestDraw(); }
+  syncFocus();
 }
 function clampZoom() {
   const v = state.view; if (!v.box || !v.R) return;
@@ -2204,12 +2597,12 @@ function openSavePreset() {
     sh.append(el('div', { className: 'grabber' }), sheetNav(t('newLook'), textBtn(t('cancel'), closeSheet), save),
       el('div', { className: 'field' }, [el('label', { htmlFor: 'presetName', textContent: t('name') }), name]),
       el('div', { className: 'list' }, [switchRow('incLight', t('grpLight'), t('lookLightHint'), true),
-        switchRow('incColor', t('grpColor'), t('lookColorHint'), true)]),
+        switchRow('incColor', t('grpColor'), t('lookColorHint'), true), switchRow('incEffects', t('tEffects'), t('grpEffectsHint'), true)]),
       el('p', { className: 'facts', textContent: t('lookSaveNote') }));
     const go = async () => {
-      const groups = { light: $('#incLight').checked, color: $('#incColor').checked };
+      const groups = { light: $('#incLight').checked, color: $('#incColor').checked, effects: $('#incEffects').checked };
       const eff = effective(state.settings), values = {};
-      for (const d of SLIDERS) if (groups[d.group] && eff[d.key] !== 0) values[d.key] = eff[d.key];
+      for (const d of SLIDERS) if (groups[d.tab] && eff[d.key] !== 0) values[d.key] = eff[d.key];
       if (!Object.keys(values).length) { toast(t('nothingToSave'), 4000, 'err'); return; }
       const rec = { id: 'u-' + uid(), name: name.value.trim() || t('myLook', n), values, createdAt: now(), builtIn: false };
       await store.put('presets', rec);
@@ -2256,7 +2649,7 @@ const CLIP_KEY = 'lumora.clipboard';
 try { const c = JSON.parse(localStorage.getItem(CLIP_KEY) || 'null'); if (c && c.groups) state.clipboard = c; } catch (e) {}
 function copyFrom(s, groups) {
   const clip = { groups, light: {}, color: {}, preset: null, crop: null };
-  for (const d of SLIDERS) if (groups[d.group]) clip[d.group][d.key] = s[d.key];
+  for (const d of SLIDERS) if (groups[d.tab]) (clip[d.group] = clip[d.group] || {})[d.key] = s[d.key];
   if (groups.preset) clip.preset = s.preset ? { ...s.preset } : null;
   if (groups.crop) clip.crop = { ...s.crop };
   return clip;
@@ -2275,7 +2668,7 @@ function fitCrop(c, srcW, srcH) {
 }
 function pasteInto(s, clip, w, h) {
   const out = clone(s);
-  for (const d of SLIDERS) if (clip.groups[d.group] && typeof clip[d.group][d.key] === 'number') out[d.key] = clip[d.group][d.key];
+  for (const d of SLIDERS) if (clip.groups[d.tab] && clip[d.group] && typeof clip[d.group][d.key] === 'number') out[d.key] = clip[d.group][d.key];
   if (clip.groups.preset) out.preset = clip.preset ? { ...clip.preset } : null;
   if (clip.groups.crop && clip.crop) out.crop = fitCrop({ ...clip.crop }, w, h);
   return out;
@@ -2286,10 +2679,10 @@ function openCopySheet() {
     sh.append(el('div', { className: 'grabber' }),
       sheetNav(t('copyAdj'), null, textBtn(t('close'), closeSheet)),
       el('div', { className: 'list' }, [switchRow('cpLight', t('grpLight'), '', true), switchRow('cpColor', t('grpColor'), '', true),
-        switchRow('cpPreset', t('grpLook'), '', true), switchRow('cpCrop', t('grpCrop'), t('grpCropHint'), false)]),
+        switchRow('cpEffects', t('tEffects'), t('grpEffectsHint'), true), switchRow('cpPreset', t('grpLook'), '', true), switchRow('cpCrop', t('grpCrop'), t('grpCropHint'), false)]),
       copy, el('p', { className: 'facts', textContent: t('copyHint') }));
     copy.addEventListener('click', () => {
-      const groups = { light: $('#cpLight').checked, color: $('#cpColor').checked, preset: $('#cpPreset').checked, crop: $('#cpCrop').checked };
+      const groups = { light: $('#cpLight').checked, color: $('#cpColor').checked, effects: $('#cpEffects').checked, preset: $('#cpPreset').checked, crop: $('#cpCrop').checked };
       if (!Object.values(groups).some(Boolean)) { toast(t('pickGroup'), 2600, 'err'); return; }
       state.clipboard = copyFrom(state.settings, groups);
       try { localStorage.setItem(CLIP_KEY, JSON.stringify(state.clipboard)); } catch (e) {}
@@ -2366,7 +2759,7 @@ $('#selPaste').addEventListener('click', async () => {
 $('#selDelete').addEventListener('click', () => confirmDelete([...state.selected]));
 
 /* ---------- tabs: Light / Color / Looks / Crop ---------- */
-const MODES = ['light', 'color', 'looks', 'crop'];
+const MODES = ['light', 'color', 'effects', 'looks', 'crop'];
 function moveTabIndicator() {
   const tab = $('#mode-' + state.mode), ind = $('#tabInd');
   if (!tab.offsetWidth) return;
@@ -2379,12 +2772,9 @@ function setMode(m) {
     const tab = $('#mode-' + x), on = x === m;
     tab.setAttribute('aria-selected', on ? 'true' : 'false'); tab.tabIndex = on ? 0 : -1;
   }
-  for (const pane of $('#tray').querySelectorAll('[data-pane]')) {
-    const on = pane.dataset.pane === m;
-    pane.classList.toggle('out', !on);
-    if (on) pane.removeAttribute('inert'); else pane.setAttribute('inert', '');
-  }
-  if (m === 'light' || m === 'color') { selectAdj(state.adjByMode[m], false); centerTool(state.adj, false); }
+  if (m !== 'color') state.sub = null;
+  showPane();
+  if (TOOL_TABS.includes(m) && !state.sub) { selectAdj(state.adjByMode[m], false); centerTool(state.adj, false); }
   if (m === 'looks') buildPresetRow();
   if (state.orig) showOrig(false);
   if (m === 'crop' && state.split.on) setSplit(false);
