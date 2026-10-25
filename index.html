@@ -517,7 +517,7 @@ button.adj-value:active { background: var(--fill); }
       <button id="selDelete" class="round press danger" type="button" data-i18n-aria="delete" disabled><svg class="i" data-icon="trash"></svg></button>
     </div>
   </div>
-  <input id="pick" type="file" accept="image/jpeg,image/heic,image/heif,.jpg,.jpeg,.heic,.heif" multiple hidden>
+  <input id="pick" type="file" accept="image/jpeg,image/png,image/heic,image/heif,.jpg,.jpeg,.png,.heic,.heif" multiple hidden>
 </section>
 
 <section id="editor" class="view" data-i18n-aria="editor" hidden>
@@ -634,7 +634,7 @@ const STR = {
     'adj.whites': 'Blancos', 'adj.blacks': 'Negros', 'adj.temp': 'Temperatura', 'adj.tint': 'Matiz', 'adj.vibrance': 'Intensidad',
     'adj.saturation': 'Saturación', 'adj.angle': 'Enderezar', 'adj.amount': 'Cantidad', auto: 'Auto', autoOn: 'Auto, aplicado', autoFail: 'Auto no pudo analizar esta foto.',
     chooseLook: 'Elige un look', none: 'Ninguno', saveLook: 'Guardar', 'ratio.free': 'Libre', 'ratio.orig': 'Original',
-    countN: (n) => `${n} ${plural(n, 'foto', 'fotos')} · solo en este dispositivo`, countEmpty: 'JPG y HEIC · solo en este dispositivo',
+    countN: (n) => `${n} ${plural(n, 'foto', 'fotos')} · solo en este dispositivo`, countEmpty: 'JPG, PNG y HEIC · solo en este dispositivo',
     volatile: 'Este navegador no deja guardar datos aquí: tus fotos y ediciones se perderán al cerrar.',
     obTitle: 'Revela tus fotos con precisión', obLead: 'Luz, color, looks y recorte en un editor rápido y privado.',
     ob1t: 'Privado por diseño', ob1d: 'Tus fotos se quedan en este dispositivo. Sin cuenta y sin nube.',
@@ -643,7 +643,7 @@ const STR = {
     addPhotos: 'Añadir fotos', trySample: 'Probar con la foto de ejemplo',
     noFav: 'Aún no hay favoritas. Toca ♡ en el editor o mantén pulsada una foto.', noEdited: 'Aún no has editado ninguna foto.',
     adding: (i, n) => (n === 1 ? 'Añadiendo…' : `Añadiendo ${i} de ${n}…`), added: (n) => (n === 1 ? 'Foto añadida' : `${n} fotos añadidas`),
-    addFail: (names) => `No se pudo abrir: ${names}. Por ahora solo JPG y HEIC.`,
+    addFail: (names) => `No se pudo abrir: ${names}. Por ahora solo JPG, PNG y HEIC.`,
     selectPhotos: 'Selecciona fotos', selN: (n) => `${n} ${plural(n, 'seleccionada', 'seleccionadas')}`,
     needCopy: 'Primero copia ajustes desde una foto (••• › Copiar ajustes).',
     pasting: (i, n) => `Pegando ${i} de ${n}…`, pastedN: (n) => (n === 1 ? 'Ajustes pegados en 1 foto' : `Ajustes pegados en ${n} fotos`),
@@ -690,7 +690,7 @@ const STR = {
     'adj.whites': 'Whites', 'adj.blacks': 'Blacks', 'adj.temp': 'Temperature', 'adj.tint': 'Tint', 'adj.vibrance': 'Vibrance',
     'adj.saturation': 'Saturation', 'adj.angle': 'Straighten', 'adj.amount': 'Strength', auto: 'Auto', autoOn: 'Auto, applied', autoFail: 'Auto couldn’t analyze this photo.',
     chooseLook: 'Choose a look', none: 'None', saveLook: 'Save', 'ratio.free': 'Free', 'ratio.orig': 'Original',
-    countN: (n) => `${n} ${plural(n, 'photo', 'photos')} · only on this device`, countEmpty: 'JPG and HEIC · only on this device',
+    countN: (n) => `${n} ${plural(n, 'photo', 'photos')} · only on this device`, countEmpty: 'JPG, PNG and HEIC · only on this device',
     volatile: 'This browser can’t store data here: your photos and edits will be lost when you close it.',
     obTitle: 'Develop your photos with precision', obLead: 'Light, color, looks and crop in a fast, private editor.',
     ob1t: 'Private by design', ob1d: 'Your photos stay on this device. No account, no cloud.',
@@ -699,7 +699,7 @@ const STR = {
     addPhotos: 'Add photos', trySample: 'Try the sample photo',
     noFav: 'No favorites yet. Tap ♡ in the editor or touch and hold a photo.', noEdited: 'You haven’t edited any photos yet.',
     adding: (i, n) => (n === 1 ? 'Adding…' : `Adding ${i} of ${n}…`), added: (n) => (n === 1 ? 'Photo added' : `${n} photos added`),
-    addFail: (names) => `Couldn’t open: ${names}. Only JPG and HEIC for now.`,
+    addFail: (names) => `Couldn’t open: ${names}. Only JPG, PNG and HEIC for now.`,
     selectPhotos: 'Select photos', selN: (n) => `${n} selected`,
     needCopy: 'Copy adjustments from a photo first (••• › Copy adjustments).',
     pasting: (i, n) => `Pasting ${i} of ${n}…`, pastedN: (n) => (n === 1 ? 'Adjustments pasted to 1 photo' : `Adjustments pasted to ${n} photos`),
@@ -936,13 +936,16 @@ function fit(w, h, maxEdge, maxPx) {
   const s = Math.min(1, maxEdge / Math.max(w, h), Math.sqrt(maxPx / (w * h)));
   return [Math.max(1, Math.round(w * s)), Math.max(1, Math.round(h * s))];
 }
+// transparent areas (PNG) are flattened onto white: JPG has no transparency, and the editor works on opaque pixels
 function rasterize(src, w, h) {
   const c = document.createElement('canvas'); c.width = w; c.height = h;
-  const ctx = c.getContext('2d'); ctx.imageSmoothingQuality = 'high'; ctx.drawImage(src, 0, 0, w, h);
+  const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+  ctx.imageSmoothingQuality = 'high'; ctx.drawImage(src, 0, 0, w, h);
   return c;
 }
 const toBlob = (c, type, q) => new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('encode'))), type, q));
-const isAccepted = (f) => /^image\/(jpeg|heic|heif)$/i.test(f.type) || /\.(jpe?g|heic|heif)$/i.test(f.name || '');
+const isAccepted = (f) => /^image\/(jpeg|png|heic|heif)$/i.test(f.type) || /\.(jpe?g|png|heic|heif)$/i.test(f.name || '');
+const formatLabel = (mime) => (/hei/i.test(mime) ? 'HEIC' : /png/i.test(mime) ? 'PNG' : 'JPG');
 const baseName = (n) => (n || 'photo').replace(/\.[^.]+$/, '');
 const decimal = (v, d) => { const s = Math.abs(v).toFixed(d); return lang === 'es' ? s.replace('.', ',') : s; };
 const megapixels = (w, h) => decimal(w * h / 1e6, 1) + ' MP';
@@ -1323,7 +1326,7 @@ $('#pick').addEventListener('change', async (e) => {
       const [tw, th] = fit(w, h, 480, Infinity);
       const thumb = await toBlob(rasterize(img, tw, th), 'image/jpeg', .8);
       done();
-      const mime = f.type || (/\.hei[cf]$/i.test(f.name) ? 'image/heic' : 'image/jpeg');
+      const mime = f.type || (/\.hei[cf]$/i.test(f.name) ? 'image/heic' : /\.png$/i.test(f.name) ? 'image/png' : 'image/jpeg');
       await store.put('photos', { id: uid(), fileName: f.name || 'photo.jpg', mime, width: w, height: h,
         addedAt: now(), updatedAt: now(), hasEdit: false, thumb, original: new Blob([f], { type: mime }) });
     } catch (err) { failed.push(f.name); }
@@ -2542,7 +2545,7 @@ $('#moreBtn').addEventListener('click', () => {
     closeEditorView();
     toast(t('removed'), 3000, 'ok'); renderLibrary();
   } });
-  actionSheet(p.fileName, `${p.width} × ${p.height} · ${megapixels(p.width, p.height)} · ${/hei/i.test(p.mime) ? 'HEIC' : 'JPG'}`, acts);
+  actionSheet(p.fileName, `${p.width} × ${p.height} · ${megapixels(p.width, p.height)} · ${formatLabel(p.mime)}`, acts);
 });
 
 /* ---------- export (bottom sheet: preview, size, quality, then share) ---------- */

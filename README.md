@@ -2,7 +2,7 @@
 
 Light. Tone. Precision.
 
-A personal photo editor for iPhone that runs in Safari: JPG and HEIC, light and colour adjustments, looks (presets), crop, export. No account, no cloud: photos and edits stay on the device.
+A personal photo editor for iPhone that runs in Safari: JPG, PNG and HEIC in, JPG out, light and colour adjustments, looks (presets), crop, export. No account, no cloud: photos and edits stay on the device.
 
 Live: https://whitemex956.github.io/Lumora/ (open in Safari, Share > Add to Home Screen).
 
