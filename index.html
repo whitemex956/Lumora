@@ -327,7 +327,7 @@ button.adj-value:active { background: var(--fill); }
 .ruler { display: block; width: 100%; height: 46px; touch-action: none; cursor: ew-resize;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 16%, #000 84%, transparent); mask-image: linear-gradient(90deg, transparent, #000 16%, #000 84%, transparent); }
 .ruler.off { visibility: hidden; }
-.ruler-hint { position: absolute; inset: 0; display: grid; place-items: center; font-size: 13px; color: var(--text-muted); pointer-events: none; }
+.ruler-hint { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 0 16px; font-size: 13px; color: var(--text-muted); pointer-events: none; }
 .scale { position: absolute; left: 16%; right: 16%; bottom: 2px; height: 2px; border-radius: 2px; opacity: .85; }
 .scale.temp { background: linear-gradient(90deg, #5B8FD6, transparent 50%, #D9B44A); }
 .scale.tint { background: linear-gradient(90deg, #6FB36A, transparent 50%, #C46FC0); }
@@ -375,6 +375,12 @@ button.adj-value:active { background: var(--fill); }
 .mtool { position: relative; flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: var(--text-muted); background: var(--fill); }
 .mtool[aria-checked="true"] { color: var(--on-accent); background: var(--text); }
 .mtool.edited::before { content: ""; position: absolute; right: 0; top: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--aurora); }
+.curve-box { position: absolute; z-index: 4; border-radius: var(--r-lg); touch-action: none; overflow: hidden; }
+.curve-box canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.curve-box.removing { box-shadow: var(--glass-shadow), inset 0 0 0 2px var(--danger); }
+.histo { position: absolute; z-index: 3; width: 132px; height: 60px; border-radius: 12px; pointer-events: none; }
+.mini-seg.wide { margin: 0; align-self: stretch; }
+.mini-seg.wide button { flex: 1; }
 .focus { position: absolute; z-index: 4; transform: translate(-50%, -50%); border-radius: 50%; border: 1.5px dashed rgb(247 248 250 / .9);
   box-shadow: 0 0 0 1px rgb(0 0 0 / .25), inset 0 0 0 1px rgb(0 0 0 / .2); touch-action: none; cursor: move; transition: opacity var(--t-fast); }
 .focus::after { content: ""; position: absolute; inset: -20px; border-radius: 50%; }
@@ -605,6 +611,8 @@ button.adj-value:active { background: var(--fill); }
   </div>
   <canvas id="paintCv" class="paint-cv" aria-hidden="true"></canvas>
   <svg id="maskSvg" class="mask-svg" hidden aria-hidden="true"></svg>
+  <div id="curveBox" class="curve-box glass" hidden tabindex="0" role="application" data-i18n-aria="curve"><canvas id="curveCv"></canvas></div>
+  <canvas id="histo" class="histo glass" hidden role="img"></canvas>
   <div id="focus" class="focus" hidden><span class="focus-c" aria-hidden="true"></span></div>
   <span id="origBadge" class="stage-chip glass" hidden data-i18n="original"></span>
   <div id="split" class="split" hidden>
@@ -651,6 +659,12 @@ button.adj-value:active { background: var(--fill); }
       <div class="tray" id="tray">
         <div id="row-light" class="tool-row" data-pane="light"></div>
         <div id="row-color" class="tool-row out" data-pane="color"></div>
+        <div id="pane-curve" class="subpane out" data-pane="curve">
+          <div class="sub-top"><button class="sub-back press" type="button" data-i18n-aria="backToLight"><svg class="i sm" data-icon="back"></svg></button>
+            <span class="sub-title" data-i18n="curve"></span>
+            <button id="curveReset" class="btn plain small press" type="button" data-i18n="resetCurve" style="margin-left:auto"></button></div>
+          <div id="curveCh" class="mini-seg wide" role="group" data-i18n-aria="curve"></div>
+        </div>
         <div id="pane-mixer" class="subpane out" data-pane="mixer">
           <div class="sub-top"><button class="sub-back press" type="button" data-i18n-aria="backToColor"><svg class="i sm" data-icon="back"></svg></button>
             <span class="sub-title"><span id="swatchHint" class="dotc"></span><span data-i18n="mixer"></span></span>
@@ -745,6 +759,9 @@ const STR = {
     compare: 'Antes y después', splitPos: 'Divisor entre original y edición', editedLabel: 'Editada', typeValue: 'Escribir un valor exacto', estSize: (s) => `Peso estimado ≈ ${s}`, undo: 'Deshacer', redo: 'Rehacer', moreOptions: 'Más opciones', export: 'Exportar',
     fine: 'Ajuste fino', fineTag: 'FINO', manageLook: 'Gestionar look', resetValue: 'Restablecer valor', looks: 'Looks',
     rotate: 'Girar 90° a la izquierda', flip: 'Voltear en horizontal', aspect: 'Proporción', reset: 'Restablecer', editMode: 'Herramientas de edición',
+    curve: 'Curva de tonos', curveHint: 'Toca para añadir un punto; arrástralo fuera para quitarlo.', resetCurve: 'Restablecer', backToLight: 'Volver a Luz',
+    'ch.rgb': 'RGB', 'ch.r': 'Rojo', 'ch.g': 'Verde', 'ch.b': 'Azul', histogram: 'Histograma', showHist: 'Mostrar histograma', hideHist: 'Ocultar histograma',
+    clipHi: 'luces recortadas', clipLo: 'sombras recortadas',
     backup: 'Copia de seguridad', backupMake: 'Crear copia', backupRestore: 'Restaurar', recShort: 'Para ti',
     backupNote: 'Un solo archivo con tus fotos, ediciones, favoritas y looks. Guárdalo tú en Archivos o donde quieras; Lumora no sube nada. Al restaurar solo se añade lo que falta.',
     backupEmpty: 'No hay nada que copiar todavía.', backupMade: (n, sz) => `Copia lista: ${n} ${plural(n, 'foto', 'fotos')}, ${sz}`, backupFail: 'No se pudo completar. Inténtalo de nuevo.',
@@ -821,6 +838,9 @@ const STR = {
     compare: 'Before and after', splitPos: 'Divider between original and edit', editedLabel: 'Edited', typeValue: 'Type an exact value', estSize: (s) => `Estimated size ≈ ${s}`, undo: 'Undo', redo: 'Redo', moreOptions: 'More options', export: 'Export',
     fine: 'Fine adjustment', fineTag: 'FINE', manageLook: 'Manage look', resetValue: 'Reset value', looks: 'Looks',
     rotate: 'Rotate 90° left', flip: 'Flip horizontally', aspect: 'Aspect ratio', reset: 'Reset', editMode: 'Editing tools',
+    curve: 'Tone Curve', curveHint: 'Tap to add a point. Drag it off to remove.', resetCurve: 'Reset', backToLight: 'Back to Light',
+    'ch.rgb': 'RGB', 'ch.r': 'Red', 'ch.g': 'Green', 'ch.b': 'Blue', histogram: 'Histogram', showHist: 'Show Histogram', hideHist: 'Hide Histogram',
+    clipHi: 'highlights clipped', clipLo: 'shadows clipped',
     backup: 'Backup', backupMake: 'Back up', backupRestore: 'Restore', recShort: 'For you',
     backupNote: 'One file with your photos, edits, favorites and looks. Keep it in Files or wherever you like; Lumora uploads nothing. Restoring only adds what is missing.',
     backupEmpty: 'Nothing to back up yet.', backupMade: (n, sz) => `Backup ready: ${n} ${plural(n, 'photo', 'photos')}, ${sz}`, backupFail: 'That didn’t work. Please try again.',
@@ -971,6 +991,8 @@ const ICONS = {
   grid: '<rect x="4" y="4" width="6.5" height="6.5" rx="1.75"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.75"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.75"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.75"/>',
   wand: '<path d="m4 20 10.5-10.5"/><path d="m13 8 3 3"/><path d="M17.5 3.5v3M16 5h3M20 9.5v2M19 10.5h2M11.5 3.5v1.5M10.75 4.25h1.5"/>',
   restore: '<path d="M12 14.5v-11"/><path d="M8 10.5l4 4 4-4"/><path d="M8.5 10.5H7.25A2.25 2.25 0 0 0 5 12.75v6A2.25 2.25 0 0 0 7.25 21h9.5A2.25 2.25 0 0 0 19 18.75v-6a2.25 2.25 0 0 0-2.25-2.25H15.5"/>',
+  curve: '<rect x="3.75" y="3.75" width="16.5" height="16.5" rx="3.25"/><path d="M6.5 17.5C9.5 17 10 7.5 17.5 6.5"/><circle cx="12" cy="11" r="1.4" fill="currentColor" stroke="none"/>',
+  histogram: '<path d="M3.75 20.25h16.5"/><path d="M5 20V15.5M8 20v-7M11 20V8.5M14 20v-6M17 20v-9M20 20v-3.5"/>',
   /* adjustments: the tone family shares one 8.5 circle */
   exposure: '<circle cx="12" cy="12" r="8.5"/><path d="M6 18 18 6"/><path d="M7.25 9.25h3.5M9 7.5V11M13.25 14.75h3.5"/>',
   contrast: '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor" stroke="none"/>',
@@ -1028,7 +1050,7 @@ const DEFAULTS = Object.fromEntries(SLIDERS.map((s) => [s.key, 0]));
 const DEFAULT_CROP = { cx: 0, cy: 0, w: 1, h: 1, angle: 0, rot: 0, flip: false, aspect: null };
 const ANGLE = { key: 'angle', min: -45, max: 45, step: 0.1, ticks: 90, majorStep: 15 };
 const RATIOS = [['ratio.free', null], ['ratio.orig', 'orig'], ['1:1', 1], ['4:5', 4 / 5], ['5:4', 5 / 4], ['3:2', 3 / 2], ['2:3', 2 / 3], ['16:9', 16 / 9], ['9:16', 9 / 16]];
-const clone = (s) => ({ ...s, crop: { ...s.crop }, preset: s.preset ? { ...s.preset } : null, masks: JSON.parse(JSON.stringify(s.masks || [])), heal: (s.heal || []).map((x) => ({ ...x, pts: x.pts.slice() })) });
+const clone = (s) => ({ ...s, crop: { ...s.crop }, preset: s.preset ? { ...s.preset } : null, masks: JSON.parse(JSON.stringify(s.masks || [])), heal: (s.heal || []).map((x) => ({ ...x, pts: x.pts.slice() })), curve: s.curve ? JSON.parse(JSON.stringify(s.curve)) : null });
 const AMOUNT = { key: 'amount', min: 0, max: 200, step: 1, ticks: 80, majorStep: 50, ref: 100 };
 /* Lumora's own built-in looks (stored as presets): values are added on top of the photo's own
    adjustments, scaled by Cantidad (100 = as designed). Ids and values are unchanged from 1.x. */
@@ -1106,6 +1128,7 @@ function effective(s) {
 }
 const HISTORY_MAX = 100;
 const PREVIEW_EDGE = 2048, PREVIEW_PX = 6e6;   // edit on a reduced copy (Safari memory limits)
+const DETAIL_EDGE = 4096, DETAIL_PX = 10e6;    // while zoomed in past 1.6x: a larger copy for real detail
 const EXPORT_PX = 16e6;                         // iOS canvas ceiling is about 16.7 megapixels
 const RULER_SPAN = 640;                         // css px the whole range spans on the ruler
 const FINE = 5;                                 // fine adjustment: the ruler moves five times slower
@@ -1232,6 +1255,7 @@ uniform vec4 grade1; // shadows hue (0..1), sat, highlights hue, sat
 uniform vec4 grade2; // midtones hue, sat, balance -1..1, blending -1..1
 uniform sampler2D mask0, mask1, mask2, mask3;  // up to four masks: coverage in alpha, image coordinates
 uniform vec4 maskInv;                          // 1 where a mask is inverted
+uniform sampler2D curveTex; uniform bool curveOn;   // tone curve: 256 x 1 lookup, master then red, green, blue
 uniform bool maskOn; uniform vec4 mEv, mCon, mHi, mSh, mTemp, mTint, mSat, mCla;   // each mask's local adjustments, one per channel
 uniform int overlay;        // the mask shown in red while it is edited, -1 = none
 const vec3 LW = vec3(.2126, .7152, .0722);
@@ -1330,6 +1354,10 @@ void main() {
   float Y = dot(l, LW);
   l = mix(vec3(Y), l, 1. + col_.x * (1. - s));
   l = mix(vec3(Y), l, 1. + col_.y);
+  if (curveOn) {                                  // tone curve, on display values
+    vec3 c = toSrgb(l) * (255. / 256.) + .5 / 256.;
+    l = toLinear(vec3(texture(curveTex, vec2(c.r, .5)).r, texture(curveTex, vec2(c.g, .5)).g, texture(curveTex, vec2(c.b, .5)).b));
+  }
 
   if (mixOn) {                                    // colour mixer: hue, saturation, luminance per colour, blended between neighbours
     vec3 hsv = rgb2hsv(pow(clamp(l, 0., 1.), vec3(1. / 2.2)));
@@ -1486,6 +1514,38 @@ function findHealSource(src, sp) {
   }
   return best || { dx: b.w * 1.2 / w * (b.x > w / 2 ? -1 : 1), dy: 0 };
 }
+/* Tone curve: points [x, y] in 0..1 per channel ('rgb' master, then r, g, b), endpoints at x = 0 and 1.
+   Monotone cubic interpolation (Fritsch-Carlson), so the curve never overshoots between points. */
+const CURVE_CH = ['rgb', 'r', 'g', 'b'];
+const curveIsIdentity = (cv) => !cv || CURVE_CH.every((k) => !cv[k] || (cv[k].length === 2 && cv[k][0][0] === 0 && cv[k][0][1] === 0 && cv[k][1][0] === 1 && cv[k][1][1] === 1));
+function curveFn(pts) {
+  const p = (pts && pts.length >= 2 ? pts : [[0, 0], [1, 1]]).slice().sort((a, b) => a[0] - b[0]), n = p.length;
+  const d = [], m = new Array(n);
+  for (let i = 0; i < n - 1; i++) d.push((p[i + 1][1] - p[i][1]) / Math.max(1e-6, p[i + 1][0] - p[i][0]));
+  m[0] = d[0]; m[n - 1] = d[n - 2];
+  for (let i = 1; i < n - 1; i++) m[i] = d[i - 1] * d[i] <= 0 ? 0 : (d[i - 1] + d[i]) / 2;
+  for (let i = 0; i < n - 1; i++) {
+    if (d[i] === 0) { m[i] = m[i + 1] = 0; continue; }
+    const a = m[i] / d[i], b = m[i + 1] / d[i], h = a * a + b * b;
+    if (h > 9) { const t = 3 / Math.sqrt(h); m[i] = t * a * d[i]; m[i + 1] = t * b * d[i]; }
+  }
+  return (x) => {
+    if (x <= p[0][0]) return p[0][1];
+    if (x >= p[n - 1][0]) return p[n - 1][1];
+    let i = 0; while (x > p[i + 1][0]) i++;
+    const hgt = p[i + 1][0] - p[i][0], t = (x - p[i][0]) / hgt, t2 = t * t, t3 = t2 * t;
+    return (2 * t3 - 3 * t2 + 1) * p[i][1] + (t3 - 2 * t2 + t) * hgt * m[i] + (-2 * t3 + 3 * t2) * p[i + 1][1] + (t3 - t2) * hgt * m[i + 1];
+  };
+}
+function curveLUT(cv) {
+  const f = CURVE_CH.map((k) => curveFn(cv && cv[k])), out = new Uint8Array(256 * 4);
+  for (let i = 0; i < 256; i++) {
+    const v = Math.min(1, Math.max(0, f[0](i / 255)));
+    for (let c = 0; c < 3; c++) out[i * 4 + c] = Math.round(Math.min(1, Math.max(0, f[c + 1](v))) * 255);
+    out[i * 4 + 3] = 255;
+  }
+  return out;
+}
 class Renderer {
   constructor(canvas, keep = false) {
     const gl = canvas.getContext('webgl2', { premultipliedAlpha: false, preserveDrawingBuffer: keep, antialias: false, alpha: false });
@@ -1505,8 +1565,8 @@ class Renderer {
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
     this.u = Object.fromEntries(['ev', 'con', 'tone', 'wb', 'col', 'orig', 'split', 'size', 'optics', 'detail', 'fx', 'lens', 'vg', 'crop1', 'crop2',
-      'mixOn', 'mixH', 'mixS', 'mixL', 'grade1', 'grade2', 'maskOn', 'maskInv', 'mEv', 'mCon', 'mHi', 'mSh', 'mTemp', 'mTint', 'mSat', 'mCla', 'overlay'].map((n) => [n, gl.getUniformLocation(pr, n)]));
-    this.texs = ['img', 'blurS', 'blurM', 'blurL', 'mask0', 'mask1', 'mask2', 'mask3'].map((n, i) => {
+      'mixOn', 'mixH', 'mixS', 'mixL', 'grade1', 'grade2', 'maskOn', 'maskInv', 'curveOn', 'mEv', 'mCon', 'mHi', 'mSh', 'mTemp', 'mTint', 'mSat', 'mCla', 'overlay'].map((n) => [n, gl.getUniformLocation(pr, n)]));
+    this.texs = ['img', 'blurS', 'blurM', 'blurL', 'mask0', 'mask1', 'mask2', 'mask3', 'curveTex'].map((n, i) => {
       gl.uniform1i(gl.getUniformLocation(pr, n), i);
       gl.activeTexture(gl.TEXTURE0 + i);
       const tx = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tx);
@@ -1582,6 +1642,17 @@ class Renderer {
     const gl = this.gl;
     const ms = (s.masks || []).slice(0, 4);
     if (s.clarity || s.texture || s.dehaze || s.noise || s.lensBlur || ms.some((m) => m.adj && m.adj.clarity)) this.ensureBlur();
+    const cv = curveIsIdentity(s.curve) ? null : s.curve;
+    gl.uniform1i(this.u.curveOn, cv ? 1 : 0);
+    if (cv) {
+      const key = JSON.stringify(cv);
+      if (key !== this.curveKey) {
+        this.curveKey = key;
+        const lut = curveLUT(cv);
+        gl.activeTexture(gl.TEXTURE8); gl.bindTexture(gl.TEXTURE_2D, this.texs[8]);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 256, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, lut);
+      }
+    }
     gl.uniform1i(this.u.maskOn, ms.length ? 1 : 0);
     if (ms.length) {
       ms.forEach((m, i) => this.updateMask(i, m));
@@ -1944,7 +2015,7 @@ async function openSettings() {
           el('p', { className: 'facts', textContent: t('backupNote'), style: 'text-align:left' })]),
         el('div', { className: 'about' }, [
           (() => { const m = $('.wordmark').cloneNode(true); return m; })(),
-          el('p', { className: 'facts', textContent: 'Light · Tone · Precision · 2.1' }),
+          el('p', { className: 'facts', textContent: 'Light · Tone · Precision · 2.2' }),
           el('p', { className: 'facts', textContent: t('storageLine', count, state.userPresets.length) }),
           el('p', { className: 'facts', textContent: t('privacy') })]));
     };
@@ -2013,9 +2084,9 @@ async function restoreBackup(file) {
 $('#restorePick').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) restoreBackup(f); });
 
 /* ---------- editor state ---------- */
-const state = { photo: null, settings: { ...DEFAULTS, crop: { ...DEFAULT_CROP }, preset: null, masks: [], heal: [] }, src: null, renderer: null, orig: false, compareLock: false, frame: 0,
+const state = { photo: null, settings: { ...DEFAULTS, crop: { ...DEFAULT_CROP }, preset: null, masks: [], heal: [], curve: null }, src: null, renderer: null, orig: false, compareLock: false, frame: 0,
   saveTimer: 0, changed: false, adj: 'exposure', adjByMode: { light: 'exposure', color: 'temp', effects: 'clarity' }, history: [], hIndex: -1, autoPrev: null,
-  mode: 'light', view: { k: 1 }, userPresets: [], selecting: false, selected: new Set(), clipboard: null, split: { on: false, x: 0 }, editingValue: false, sub: null, lookCat: 'recommended', recommended: null, maskPane: 'masks', maskSel: -1, maskParam: 'exposure', brushSize: 30, brushErase: false, showOverlay: false, overlayUntil: 0, base: null, healKey: '[]', healCount: 0, mixColor: 0, mixAttr: 'H', gradeRegion: 'Sh', gradeAttr: 'H' };
+  mode: 'light', view: { k: 1 }, userPresets: [], selecting: false, selected: new Set(), clipboard: null, split: { on: false, x: 0 }, editingValue: false, sub: null, hiRes: false, resToken: 0, curveCh: 'rgb', curveSel: -1, showHist: pref('lumora.hist') === '1', hist: null, histR: null, histFor: null, lookCat: 'recommended', recommended: null, maskPane: 'masks', maskSel: -1, maskParam: 'exposure', brushSize: 30, brushErase: false, showOverlay: false, overlayUntil: 0, base: null, healKey: '[]', healCount: 0, mixColor: 0, mixAttr: 'H', gradeRegion: 'Sh', gradeAttr: 'H' };
 const canvas = $('#view');
 function ensureRenderer() {
   if (!state.renderer) state.renderer = new Renderer(canvas);
@@ -2024,6 +2095,7 @@ function ensureRenderer() {
 canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); state.renderer = null; });
 canvas.addEventListener('webglcontextrestored', () => { if (state.src) { ensureRenderer().setImage(state.src); requestDraw(); } });
 function requestDraw() {
+  scheduleHist();
   if (state.frame) return;
   state.frame = requestAnimationFrame(() => {
     state.frame = 0;
@@ -2053,11 +2125,11 @@ function crossfade() {
 function toStored(s) {
   const out = { light: {}, color: {}, crop: { ...s.crop }, preset: s.preset ? { ...s.preset } : null };
   for (const d of SLIDERS) (out[d.group] = out[d.group] || {})[d.key] = s[d.key];
-  out.masks = JSON.parse(JSON.stringify(s.masks || [])); out.heal = (s.heal || []).map((x) => ({ ...x }));
+  out.masks = JSON.parse(JSON.stringify(s.masks || [])); out.heal = (s.heal || []).map((x) => ({ ...x })); out.curve = curveIsIdentity(s.curve) ? null : JSON.parse(JSON.stringify(s.curve));
   return out;
 }
 function fromStored(stored) {
-  const s = { ...DEFAULTS, crop: { ...DEFAULT_CROP }, preset: null, masks: [], heal: [] };
+  const s = { ...DEFAULTS, crop: { ...DEFAULT_CROP }, preset: null, masks: [], heal: [], curve: null };
   if (!stored) return s;
   const pr = stored.preset;
   if (pr && typeof pr.id === 'string' && typeof pr.amount === 'number' && isFinite(pr.amount)) s.preset = { id: pr.id, amount: Math.min(200, Math.max(0, pr.amount)) };
@@ -2072,7 +2144,7 @@ function fromStored(stored) {
       angle: num(c.angle, -45, 45, 0), rot: [0, 90, 180, 270].includes(c.rot) ? c.rot : 0, flip: !!c.flip,
       aspect: typeof c.aspect === 'number' && c.aspect > 0 ? c.aspect : null };
   }
-  s.masks = cleanMasks(stored.masks); s.heal = cleanHeal(stored.heal);
+  s.masks = cleanMasks(stored.masks); s.heal = cleanHeal(stored.heal); s.curve = cleanCurve(stored.curve);
   return s;
 }
 // stored masks and Remove spots are checked before use: known types, finite numbers, sane sizes
@@ -2095,10 +2167,22 @@ function cleanHeal(a) {
   return a.slice(0, 300).filter((sp) => sp && Array.isArray(sp.pts) && sp.pts.length >= 2)
     .map((sp) => ({ pts: cleanPts(sp.pts), size: fin(sp.size, .001, .6, .04), soft: fin(sp.soft, 0, 1, .35), dx: fin(sp.dx, -1, 1, 0), dy: fin(sp.dy, -1, 1, 0) }));
 }
+function cleanCurve(c) {
+  if (!c || typeof c !== 'object') return null;
+  const out = {};
+  for (const k of CURVE_CH) {
+    let pts = Array.isArray(c[k]) ? c[k].filter((q) => Array.isArray(q) && q.length === 2).map(([x, y]) => [fin(x, 0, 1, 0), fin(y, 0, 1, 0)]).slice(0, 16) : [];
+    pts.sort((a, b) => a[0] - b[0]);
+    if (pts.length < 2 || pts[0][0] !== 0 || pts[pts.length - 1][0] !== 1) pts = [[0, 0], [1, 1]];
+    out[k] = pts;
+  }
+  return curveIsIdentity(out) ? null : out;
+}
 const cropIsIdentity = (c) => c.rot === 0 && c.angle === 0 && !c.flip && c.cx === 0 && c.cy === 0 && c.w === 1 && c.h === 1;
-const isDefault = (s) => SLIDERS.every((d) => s[d.key] === 0) && cropIsIdentity(s.crop) && !(s.preset && presetById(s.preset.id)) && !(s.masks && s.masks.length) && !(s.heal && s.heal.length);
+const isDefault = (s) => SLIDERS.every((d) => s[d.key] === 0) && cropIsIdentity(s.crop) && !(s.preset && presetById(s.preset.id)) && !(s.masks && s.masks.length) && !(s.heal && s.heal.length) && curveIsIdentity(s.curve);
 const same = (a, b) => SLIDERS.every((d) => a[d.key] === b[d.key]) && JSON.stringify(a.crop) === JSON.stringify(b.crop) && JSON.stringify(a.preset) === JSON.stringify(b.preset)
-  && JSON.stringify(a.masks || []) === JSON.stringify(b.masks || []) && JSON.stringify(a.heal || []) === JSON.stringify(b.heal || []);
+  && JSON.stringify(a.masks || []) === JSON.stringify(b.masks || []) && JSON.stringify(a.heal || []) === JSON.stringify(b.heal || [])
+  && JSON.stringify(a.curve || null) === JSON.stringify(b.curve || null);
 
 /* ---------- tool rows: Auto + one round button per adjustment, per tab ---------- */
 const RING_C = 2 * Math.PI * 25;
@@ -2129,7 +2213,9 @@ for (const g of TOOL_TABS) {
   if (g === 'light') {
     const qb = el('button', { className: 'tool pane-open', type: 'button', id: 'quickBtn' }, [ringSvg(), icon('wand')]);
     qb.dataset.i18nAria = 'quickActions'; qb.addEventListener('click', () => openQuickActions());
-    row.append(qb, autoBtn, el('span', { className: 'tool-sep', ariaHidden: 'true' }), grp);
+    const cb = el('button', { className: 'tool pane-open', type: 'button', id: 'open-curve' }, [ringSvg(), icon('curve')]);
+    cb.dataset.i18nAria = 'curve'; cb.addEventListener('click', () => openSub('curve'));
+    row.append(qb, autoBtn, el('span', { className: 'tool-sep', ariaHidden: 'true' }), grp, el('span', { className: 'tool-sep', ariaHidden: 'true' }), cb);
   }
   else if (g === 'color') {   // Mixer and Grading open their own panels
     const open = (pane, ic) => { const b = el('button', { className: 'tool pane-open', type: 'button', id: 'open-' + pane }, [ringSvg(), icon(ic)]);
@@ -2212,17 +2298,18 @@ function selectMix(i, a) { state.mixColor = i; state.mixAttr = a; selectAdj('mix
 function selectGrade(r, a) { state.gradeRegion = r; state.gradeAttr = a; selectAdj(gradeKey(r, a), false); }
 function openSub(pane) {
   state.sub = pane; showPane();
-  if (pane === 'mixer') selectMix(state.mixColor, state.mixAttr); else selectGrade(state.gradeRegion, state.gradeAttr);
+  if (pane === 'curve') { state.curveSel = -1; layoutCurve(); syncControls(); }
+  else if (pane === 'mixer') selectMix(state.mixColor, state.mixAttr); else selectGrade(state.gradeRegion, state.gradeAttr);
   const first = $('#pane-' + pane + ' .sub-back'); if (first) first.focus({ preventScroll: true });
 }
 function closeSub() {
-  const was = state.sub; state.sub = null; showPane();
-  selectAdj(state.adjByMode.color, false); centerTool(state.adj, false);
+  const was = state.sub; state.sub = null; showPane(); syncCurveBox();
+  selectAdj(state.adjByMode[state.mode], false); centerTool(state.adj, false);
   const b = $('#open-' + was); if (b) b.focus({ preventScroll: true });
 }
-document.querySelectorAll('.sub-back').forEach((b) => b.addEventListener('click', closeSub));
+document.querySelectorAll('.sub-back:not(.mask-back)').forEach((b) => b.addEventListener('click', closeSub));   // the Masks panels have their own Back
 function showPane() {
-  const active = state.mode === 'color' && state.sub ? state.sub : state.mode === 'masks' ? state.maskPane : state.mode;
+  const active = (state.mode === 'color' || state.mode === 'light') && state.sub ? state.sub : state.mode === 'masks' ? state.maskPane : state.mode;
   for (const pane of $('#tray').querySelectorAll('[data-pane]')) {
     const on = pane.dataset.pane === active;
     pane.classList.toggle('out', !on);
@@ -2435,6 +2522,165 @@ function endPaint(g, cancelled) {
   syncHeal(); commit(); scheduleSave(); syncControls();
 }
 
+/* ---------- Light > Curve: the editor sits over the photo; the histogram is drawn behind it ---------- */
+const curveBox = $('#curveBox'), curveCv = $('#curveCv'), cctx = curveCv.getContext('2d');
+const CH_COLOR = { rgb: '#F7F8FA', r: '#FF6B6B', g: '#5BD68A', b: '#5AA8FF' };
+const curvePts = () => ((state.settings.curve && state.settings.curve[state.curveCh]) || [[0, 0], [1, 1]]);
+function setCurvePts(pts) {
+  const cv = state.settings.curve ? { ...state.settings.curve } : Object.fromEntries(CURVE_CH.map((k) => [k, [[0, 0], [1, 1]]]));
+  cv[state.curveCh] = pts;
+  state.settings.curve = curveIsIdentity(cv) ? null : cv;
+  state.autoPrev = null; requestDraw(); scheduleSave(); drawCurve(); syncControls();
+}
+function layoutCurve() {
+  const R = state.view.R; if (!R) return;
+  const size = Math.max(160, Math.min(R.w - 40, R.h - 24, 340));
+  Object.assign(curveBox.style, { width: size + 'px', height: size + 'px', left: R.x + (R.w - size) / 2 + 'px', top: R.y + (R.h - size) / 2 + 'px' });
+  const dpr = Math.min(2, window.devicePixelRatio || 1);
+  curveCv.width = Math.round(size * dpr); curveCv.height = Math.round(size * dpr);
+  syncCurveBox();
+}
+function syncCurveBox() {
+  const on = state.sub === 'curve' && state.mode === 'light' && !!state.src && !state.orig;
+  curveBox.hidden = !on;
+  if (on) { drawCurve(); scheduleHist(); }
+}
+function syncCurveUi() {
+  for (const b of $('#curveCh').children) b.setAttribute('aria-pressed', b.dataset.ch === state.curveCh ? 'true' : 'false');
+  $('#curveReset').disabled = curveIsIdentity(state.settings.curve);
+  const ob = $('#open-curve'); if (ob) { const arc = ob.querySelector('.arc'), on = !curveIsIdentity(state.settings.curve);
+    arc.setAttribute('stroke-dasharray', on ? `${RING_C} ${RING_C}` : `0 ${RING_C}`); arc.style.visibility = on ? 'visible' : 'hidden'; }
+}
+function drawCurve() {
+  if (curveBox.hidden) return;
+  const W = curveCv.width, H = curveCv.height, g = cctx, pad = W * .04, iw = W - 2 * pad, ih = H - 2 * pad;
+  const X = (x) => pad + x * iw, Y = (y) => pad + (1 - y) * ih;
+  g.clearRect(0, 0, W, H);
+  const hist = state.hist;   // the photo's histogram behind the curve
+  if (hist) {
+    const bins = state.curveCh === 'rgb' ? hist.l : hist[state.curveCh], mx = Math.max(...bins) || 1;
+    g.fillStyle = state.curveCh === 'rgb' ? 'rgba(247,248,250,.16)' : CH_COLOR[state.curveCh] + '33';
+    g.beginPath(); g.moveTo(X(0), Y(0));
+    bins.forEach((v, i) => g.lineTo(X((i + .5) / bins.length), Y(0) - Math.sqrt(v / mx) * ih * .9));
+    g.lineTo(X(1), Y(0)); g.closePath(); g.fill();
+  }
+  g.strokeStyle = 'rgba(247,248,250,.14)'; g.lineWidth = 1;
+  for (let i = 1; i < 4; i++) { g.beginPath(); g.moveTo(X(i / 4), Y(0)); g.lineTo(X(i / 4), Y(1)); g.moveTo(X(0), Y(i / 4)); g.lineTo(X(1), Y(i / 4)); g.stroke(); }
+  g.strokeStyle = 'rgba(247,248,250,.3)'; g.setLineDash([4, 4]); g.beginPath(); g.moveTo(X(0), Y(0)); g.lineTo(X(1), Y(1)); g.stroke(); g.setLineDash([]);
+  g.strokeRect(X(0), Y(1), iw, ih);
+  // the other channels faintly, the chosen one on top
+  for (const ch of CURVE_CH) {
+    const pts = state.settings.curve && state.settings.curve[ch], mine = ch === state.curveCh;
+    if (!mine && (!pts || (pts.length === 2 && pts[0][1] === 0 && pts[1][1] === 1))) continue;
+    const f = curveFn(pts);
+    g.strokeStyle = CH_COLOR[ch]; g.globalAlpha = mine ? 1 : .35; g.lineWidth = (mine ? 2.2 : 1.4) * (W / curveCv.clientWidth || 1);
+    g.beginPath(); for (let i = 0; i <= 128; i++) { const x = i / 128; i ? g.lineTo(X(x), Y(f(x))) : g.moveTo(X(x), Y(f(x))); } g.stroke();
+  }
+  g.globalAlpha = 1;
+  const r = 7 * (W / curveCv.clientWidth || 1);
+  curvePts().forEach(([x, y], i) => {
+    g.beginPath(); g.arc(X(x), Y(y), i === state.curveSel ? r * 1.3 : r, 0, Math.PI * 2);
+    g.fillStyle = i === state.curveSel ? CH_COLOR[state.curveCh] : '#08090C'; g.fill();
+    g.lineWidth = 2 * (W / curveCv.clientWidth || 1); g.strokeStyle = CH_COLOR[state.curveCh]; g.stroke();
+  });
+}
+let cdragC = null, lastCurveTap = { t: 0, i: -1 };
+const curvePos = (e) => { const b = curveCv.getBoundingClientRect(), pad = b.width * .04;
+  return { x: (e.clientX - b.left - pad) / (b.width - 2 * pad), y: 1 - (e.clientY - b.top - pad) / (b.height - 2 * pad), px: e.clientX, py: e.clientY, w: b.width - 2 * pad }; };
+curveBox.addEventListener('pointerdown', (e) => {
+  e.stopPropagation(); e.preventDefault(); curveBox.setPointerCapture(e.pointerId);
+  const q = curvePos(e), pts = curvePts().map((x) => x.slice());
+  let i = pts.findIndex(([x, y]) => Math.hypot((x - q.x) * q.w, (y - q.y) * q.w) < 22);
+  const tn = performance.now();
+  if (i > 0 && i < pts.length - 1 && i === lastCurveTap.i && tn - lastCurveTap.t < 320) {   // double tap removes a point
+    pts.splice(i, 1); state.curveSel = -1; setCurvePts(pts); commit(); lastCurveTap.t = 0; return;
+  }
+  lastCurveTap = { t: tn, i };
+  if (i < 0) {   // a new point on the curve under the finger
+    if (pts.length >= 16 || q.x <= .01 || q.x >= .99) return;
+    const x = Number(clamp(q.x, .01, .99).toFixed(3)), y = Number(clamp(curveFn(pts)(x), 0, 1).toFixed(3));
+    pts.push([x, y]); pts.sort((a, b) => a[0] - b[0]); i = pts.findIndex((p) => p[0] === x);
+    setCurvePts(pts);
+  }
+  state.curveSel = i; cdragC = { i, out: false }; drawCurve(); syncControls();
+});
+curveBox.addEventListener('pointermove', (e) => {
+  if (!cdragC) return;
+  const q = curvePos(e), pts = curvePts().map((x) => x.slice()), i = cdragC.i, end = i === 0 || i === pts.length - 1;
+  const lo = end ? (i === 0 ? 0 : 1) : pts[i - 1][0] + .01, hi = end ? lo : pts[i + 1][0] - .01;
+  cdragC.out = !end && (q.y < -.12 || q.y > 1.12 || q.x < -.12 || q.x > 1.12);   // dragged off the box: removed on release
+  pts[i] = [Number(clamp(q.x, lo, hi).toFixed(3)), Number(clamp(q.y, 0, 1).toFixed(3))];
+  curveBox.classList.toggle('removing', cdragC.out);
+  setCurvePts(pts);
+});
+function endCurveDrag() {
+  if (!cdragC) return;
+  const d = cdragC; cdragC = null; curveBox.classList.remove('removing');
+  if (d.out) { const pts = curvePts().map((x) => x.slice()); pts.splice(d.i, 1); state.curveSel = -1; setCurvePts(pts); }
+  commit();
+}
+curveBox.addEventListener('pointerup', endCurveDrag); curveBox.addEventListener('pointercancel', endCurveDrag);
+for (const ch of CURVE_CH) {
+  const b = el('button', { type: 'button' }); b.dataset.ch = ch; b.dataset.i18n = 'ch.' + ch; b.textContent = t('ch.' + ch);
+  b.addEventListener('click', () => { state.curveCh = ch; state.curveSel = -1; drawCurve(); syncControls(); }); $('#curveCh').append(b);
+}
+$('#curveReset').addEventListener('click', () => { state.settings.curve = null; state.curveSel = -1; requestDraw(); scheduleSave(); commit(); drawCurve(); syncControls(); });
+curveBox.addEventListener('keydown', (e) => {   // arrows move the selected point, Delete removes it
+  const pts = curvePts().map((x) => x.slice()), i = state.curveSel; if (i < 0) return;
+  const st = e.shiftKey ? .05 : .01, mv = { ArrowUp: [0, st], ArrowDown: [0, -st], ArrowLeft: [-st, 0], ArrowRight: [st, 0] }[e.key];
+  if (mv) {
+    e.preventDefault(); const end = i === 0 || i === pts.length - 1;
+    pts[i] = [end ? pts[i][0] : clamp(pts[i][0] + mv[0], pts[i - 1][0] + .01, pts[i + 1][0] - .01), clamp(pts[i][1] + mv[1], 0, 1)].map((v) => Number(v.toFixed(3)));
+    setCurvePts(pts); commit();
+  } else if ((e.key === 'Delete' || e.key === 'Backspace') && i > 0 && i < pts.length - 1) { e.preventDefault(); pts.splice(i, 1); state.curveSel = -1; setCurvePts(pts); commit(); }
+});
+
+/* Histogram: red, green, blue and luminance of the edited photo, from a 256 px copy rendered on the side */
+const histCv = $('#histo'), hctx = histCv.getContext('2d');
+let histTimer = 0;
+function scheduleHist() {
+  if (!state.src || !(state.showHist || state.sub === 'curve')) return;
+  clearTimeout(histTimer); histTimer = setTimeout(updateHist, 140);
+}
+function updateHist() {
+  if (!state.src) return;
+  try {
+    if (!state.histR) state.histR = new Renderer(document.createElement('canvas'), true);
+    if (state.histFor !== state.src) { const [w, h] = fit(state.src.width, state.src.height, 256, Infinity); state.histR.setImage(rasterize(state.src, w, h)); state.histFor = state.src; }
+    const r = state.histR, gl = r.gl;
+    r.draw(effective(state.settings));
+    const px = new Uint8Array(r.w * r.h * 4); gl.readPixels(0, 0, r.w, r.h, gl.RGBA, gl.UNSIGNED_BYTE, px);
+    const B = 64, h = { r: new Array(B).fill(0), g: new Array(B).fill(0), b: new Array(B).fill(0), l: new Array(B).fill(0) };
+    for (let i = 0; i < px.length; i += 4) {
+      h.r[px[i] >> 2]++; h.g[px[i + 1] >> 2]++; h.b[px[i + 2] >> 2]++;
+      h.l[Math.min(63, (.2126 * px[i] + .7152 * px[i + 1] + .0722 * px[i + 2]) >> 2)]++;
+    }
+    const n = px.length / 4;
+    h.clipLo = h.l[0] / n > .01; h.clipHi = h.l[B - 1] / n > .01;
+    state.hist = h;
+  } catch (e) { state.hist = null; }
+  drawHist(); drawCurve();
+}
+function drawHist() {
+  const on = state.showHist && !!state.hist && state.mode !== 'crop' && !state.orig && !(state.sub === 'curve' && state.mode === 'light');
+  histCv.hidden = !on; if (!on) return;
+  if (state.view.box) { const v = visiblePhoto(); Object.assign(histCv.style, { left: v.l + 10 + 'px', top: v.t + 10 + 'px' }); }   // inside the visible photo
+  const dpr = Math.min(2, window.devicePixelRatio || 1), W = Math.round(132 * dpr), H = Math.round(60 * dpr);
+  if (histCv.width !== W) { histCv.width = W; histCv.height = H; }
+  const g = hctx, h = state.hist, mx = Math.max(...h.r, ...h.g, ...h.b) || 1, pad = 6 * dpr;
+  g.clearRect(0, 0, W, H); g.globalCompositeOperation = 'lighter';
+  for (const [k, col] of [['r', 'rgba(255,90,90,.75)'], ['g', 'rgba(80,220,120,.75)'], ['b', 'rgba(80,150,255,.8)']]) {
+    g.fillStyle = col; g.beginPath(); g.moveTo(pad, H - pad);
+    h[k].forEach((v, i) => g.lineTo(pad + (i + .5) / 64 * (W - 2 * pad), H - pad - Math.sqrt(v / mx) * (H - 2 * pad)));
+    g.lineTo(W - pad, H - pad); g.closePath(); g.fill();
+  }
+  g.globalCompositeOperation = 'source-over';
+  g.fillStyle = '#7DD3FC'; if (h.clipLo) g.fillRect(pad, H - pad - 3 * dpr, 4 * dpr, 3 * dpr);   // clipped shadows
+  g.fillStyle = '#FF7A70'; if (h.clipHi) g.fillRect(W - pad - 4 * dpr, H - pad - 3 * dpr, 4 * dpr, 3 * dpr);   // clipped highlights
+  histCv.setAttribute('aria-label', t('histogram') + (h.clipHi ? ', ' + t('clipHi') : '') + (h.clipLo ? ', ' + t('clipLo') : ''));
+}
+function toggleHist() { state.showHist = !state.showHist; setPref('lumora.hist', state.showHist ? '1' : null); if (state.showHist) updateHist(); else drawHist(); }
+
 /* Effects > Lens Blur: the focus area is set on the photo (drag the centre, drag the ring for its size) */
 const focusEl = $('#focus');
 function imgToStage(u, v) {   // a point of the un-oriented image (0..1) -> stage px
@@ -2643,15 +2889,15 @@ function adjLabel(key) {
 }
 function syncControls() {
   const d = dial(), v = dialValue(), ref = d.ref || 0;
-  const looks = state.mode === 'looks', pr = activePreset(), maskList = state.mode === 'masks' && state.maskPane === 'masks', noPreset = (looks && !pr) || maskList;
+  const looks = state.mode === 'looks', pr = activePreset(), maskList = state.mode === 'masks' && state.maskPane === 'masks', curveOpen = state.sub === 'curve' && state.mode === 'light', noPreset = (looks && !pr) || maskList || curveOpen;
   $('#adjName').textContent = looks ? (pr ? `${t('adj.amount')} · ${pname(pr)}` : t('chooseLook')) : state.mode === 'crop' ? t('adj.angle')
-    : state.mode === 'masks' ? (maskList ? t('tMasks') : d === BRUSH ? t('brushSize') : `${maskName(state.maskSel)} · ${t('adj.' + d.key)}`) : adjLabel(d.key);
+    : curveOpen ? t('curve') : state.mode === 'masks' ? (maskList ? t('tMasks') : d === BRUSH ? t('brushSize') : `${maskName(state.maskSel)} · ${t('adj.' + d.key)}`) : adjLabel(d.key);
   const sc = $('#scale'), toolTab = TOOL_TABS.includes(state.mode);
   sc.className = 'scale ' + ((toolTab && (d.scale || (d.mix && d.mix[0] === 'H' && 'mixhue'))) || 'none');
   sc.style.background = d.mix && d.mix[0] === 'H' ? `linear-gradient(90deg, hsl(${MIX_HUES[d.mix[1]] - 35} 70% 55%), transparent 50%, hsl(${MIX_HUES[d.mix[1]] + 35} 70% 55%))` : '';
   ruler.setAttribute('aria-valuemin', d.min); ruler.setAttribute('aria-valuemax', d.max);
   ruler.classList.toggle('off', noPreset); ruler.tabIndex = noPreset ? -1 : 0;
-  $('#rulerHint').hidden = !noPreset; $('#rulerHint').textContent = noPreset ? t(maskList ? 'maskHint' : 'lookHint') : '';
+  $('#rulerHint').hidden = !noPreset; $('#rulerHint').textContent = noPreset ? t(curveOpen ? 'curveHint' : maskList ? 'maskHint' : 'lookHint') : '';
   syncChips();
   const val = $('#adjValue');
   val.disabled = noPreset;
@@ -2673,12 +2919,13 @@ function syncControls() {
     arc.style.visibility = f === 0 ? 'hidden' : 'visible';
     b.setAttribute('aria-label', `${adjLabel(dd.key)}, ${fmtValue(dd.key, bv)}`);
   }
-  syncSubpanes(); syncFocus(); syncMaskUi();
+  syncSubpanes(); syncFocus(); syncMaskUi(); syncCurveUi();
+  if (curveOpen && state.curveSel >= 0) { const q = curvePts()[state.curveSel]; if (q) val.replaceChildren(`${Math.round(q[0] * 255)} → ${Math.round(q[1] * 255)}`); }
   autoBtn.setAttribute('aria-pressed', state.autoPrev ? 'true' : 'false');
   autoBtn.setAttribute('aria-label', state.autoPrev ? t('autoOn') : t('auto'));
   $('#undoBtn').disabled = state.hIndex <= 0;
   $('#redoBtn').disabled = state.hIndex >= state.history.length - 1;
-  $('#mode-light').classList.toggle('edited', anyIn('light'));
+  $('#mode-light').classList.toggle('edited', anyIn('light') || !curveIsIdentity(state.settings.curve));
   $('#mode-color').classList.toggle('edited', anyIn('color'));
   $('#mode-effects').classList.toggle('edited', anyIn('effects'));
   $('#mode-masks').classList.toggle('edited', !!(state.settings.masks.length || state.settings.heal.length));
@@ -2715,7 +2962,7 @@ function commit() {
 function restore(snapshot) {
   if (JSON.stringify(snapshot.crop) === JSON.stringify(state.settings.crop)) crossfade();
   state.settings = clone(snapshot); state.autoPrev = null;
-  syncHeal(); if (state.maskSel >= state.settings.masks.length) { state.maskSel = -1; if (state.maskPane === 'maskedit') state.maskPane = 'masks'; } if (state.mode === 'masks') { showPane(); buildMaskChips(); }
+  syncHeal(); state.curveSel = -1; drawCurve(); if (state.maskSel >= state.settings.masks.length) { state.maskSel = -1; if (state.maskPane === 'maskedit') state.maskPane = 'masks'; } if (state.mode === 'masks') { showPane(); buildMaskChips(); }
   layout(); syncControls(); requestDraw(); scheduleSave();
   if (state.mode === 'looks') syncPresetTiles();
 }
@@ -2730,7 +2977,7 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('keydown', (e) => {
   if ($('#editor').hidden || !sheetEl.hidden || e.metaKey || e.ctrlKey || e.altKey || !state.src) return;
   const tg = e.target;
-  if (tg instanceof HTMLInputElement || tg === ruler || tg === splitHandle) return;
+  if (tg instanceof HTMLInputElement || tg === ruler || tg === splitHandle || tg === curveBox) return;
   if (e.key === ' ' && (tg === document.body || tg === canvas)) { e.preventDefault(); if (!e.repeat) showOrig(true); return; }
   const k = e.key;
   if (/^[1-6]$/.test(k)) setMode(MODES[+k - 1]);
@@ -2740,6 +2987,7 @@ document.addEventListener('keydown', (e) => {
   else if (k === '-' && state.mode !== 'crop') { const s0 = zoom.s; if (s0 / 1.5 <= 1.01) resetZoom(true); else { zoom.s = s0 / 1.5; zoom.x /= 1.5; zoom.y /= 1.5; clampZoom(); applyZoom(true); } }
   else if (k === '0' && tg !== ruler) resetZoom(true);
   else if (k.toLowerCase() === 'b') setSplit(!state.split.on);
+  else if (k.toLowerCase() === 'h') toggleHist();
   else return;
   e.preventDefault();
 });
@@ -2884,7 +3132,7 @@ function layout() {
     width: p.w * k + 'px', height: p.h * k + 'px' });
   $('#origBadge').style.top = $('#zoomChip').style.top = R.y + 'px';
   if (cropMode) resetZoom(); else { clampZoom(); applyZoom(false); }
-  placeSplit(); if (typeof syncFocus === 'function') { syncFocus(); renderHandles(); }
+  placeSplit(); if (typeof syncFocus === 'function') { syncFocus(); renderHandles(); layoutCurve(); drawHist(); }
 }
 if ('ResizeObserver' in window) { const ro = new ResizeObserver(() => layout()); ro.observe(stage); ro.observe($('#edBottom')); } else window.addEventListener('resize', layout);
 
@@ -2896,7 +3144,33 @@ function applyZoom(animate) {
   chip.hidden = !zoomed || state.orig;
   if (zoomed) { chip.replaceChildren(`${decimal(zoom.s, 1)}×`, icon('back', 'i xs')); chip.lastChild.style.transform = 'rotate(-90deg)'; chip.setAttribute('aria-label', `${decimal(zoom.s, 1)}×, ${t('fitScreen')}`); }
   if (state.split.on) { placeSplit(); requestDraw(); }
-  syncFocus(); renderHandles();
+  syncFocus(); renderHandles(); drawHist(); wantDetail();
+}
+/* Sharper zoom: past 1.6x the photo is reloaded at up to 4096 px, and back to 2048 px at fit to free memory.
+   Every effect is relative to the image size, so only the detail changes, not the look. */
+let resTimer = 0;
+function wantDetail() {
+  const p = state.photo, b = state.base; if (!p || !b) return;
+  const bigger = p.width * p.height > b.width * b.height * 1.3 || state.hiRes;
+  const hi = zoom.s > 1.6 && bigger;
+  if (hi === !!state.hiRes) { clearTimeout(resTimer); return; }
+  if (!hi && zoom.s > 1.05) return;   // keep the detail until back at fit
+  clearTimeout(resTimer); resTimer = setTimeout(() => setResolution(hi), hi ? 250 : 1200);
+}
+async function setResolution(hi) {
+  const p = state.photo, token = ++state.resToken;
+  if (!p || state.mode === 'crop') return;
+  try {
+    const { img, done } = await decode(p.original);
+    if (token !== state.resToken || state.photo !== p) { done(); return; }
+    const [w, h] = hi ? fit(img.naturalWidth, img.naturalHeight, Math.min(DETAIL_EDGE, state.renderer.maxTex), DETAIL_PX) : fit(img.naturalWidth, img.naturalHeight, PREVIEW_EDGE, PREVIEW_PX);
+    const base = rasterize(img, w, h, true); done();
+    if (token !== state.resToken || state.photo !== p) return;
+    const old = state.base; state.base = base; state.src = base; state.healKey = '[]'; state.healCount = 0; state.hiRes = hi;
+    syncHeal(true); state.renderer.setImage(state.src); state.recommended = null;
+    if (old && old !== base) old.width = old.height = 0;
+    layout(); requestDraw();
+  } catch (e) { /* stay at the current resolution */ }
 }
 function clampZoom() {
   const v = state.view; if (!v.box || !v.R) return;
@@ -2913,6 +3187,7 @@ function zoomAbout(s, px, py, s0, x0, y0) {
 $('#zoomChip').addEventListener('click', () => resetZoom(true));
 const showOrig = (on) => {
   state.orig = on; $('#origBadge').hidden = !on; $('#zoomChip').hidden = on || zoom.s <= 1.01;
+  if (typeof syncCurveBox === 'function') { syncCurveBox(); drawHist(); }
   if (state.split.on) placeSplit();
   requestDraw();
 };
@@ -3412,6 +3687,7 @@ function copyFrom(s, groups) {
   if (groups.preset) clip.preset = s.preset ? { ...s.preset } : null;
   if (groups.crop) clip.crop = { ...s.crop };
   if (groups.masks) clip.masks = JSON.parse(JSON.stringify(s.masks || []));
+  if (groups.light) clip.curve = s.curve ? JSON.parse(JSON.stringify(s.curve)) : null;
   return clip;
 }
 // pure: keep a pasted crop inside a photo of this size
@@ -3432,6 +3708,7 @@ function pasteInto(s, clip, w, h) {
   if (clip.groups.preset) out.preset = clip.preset ? { ...clip.preset } : null;
   if (clip.groups.crop && clip.crop) out.crop = fitCrop({ ...clip.crop }, w, h);
   if (clip.groups.masks && clip.masks) out.masks = cleanMasks(clip.masks);
+  if (clip.groups.light && 'curve' in clip) out.curve = cleanCurve(clip.curve);
   return out;
 }
 function openCopySheet() {
@@ -3534,9 +3811,9 @@ function setMode(m) {
     const tab = $('#mode-' + x), on = x === m;
     tab.setAttribute('aria-selected', on ? 'true' : 'false'); tab.tabIndex = on ? 0 : -1;
   }
-  if (m !== 'color') state.sub = null;
+  if (state.sub && (state.sub === 'curve' ? 'light' : 'color') !== m) state.sub = null;
   if (m === 'masks') { state.maskPane = 'masks'; state.maskSel = -1; buildMaskChips(); }
-  showPane();
+  showPane(); syncCurveBox();
   if (TOOL_TABS.includes(m) && !state.sub) { selectAdj(state.adjByMode[m], false); centerTool(state.adj, false); }
   if (m === 'looks') {   // open on the category of the look in use, so the selection is visible
     const pr = activePreset();
@@ -3622,7 +3899,7 @@ async function openEditor(p, fromImg) {
     const { img, done } = await decode(p.original);
     const [w, h] = fit(img.naturalWidth, img.naturalHeight, PREVIEW_EDGE, PREVIEW_PX);
     state.base = rasterize(img, w, h, true); done();
-    state.src = state.base; state.healKey = '[]'; state.healCount = 0; syncHeal(true);
+    state.src = state.base; state.healKey = '[]'; state.healCount = 0; state.hiRes = false; syncHeal(true);
     ensureRenderer().setImage(state.src);
     canvas.hidden = false; layout(); syncControls(); requestDraw();
     if (state.mode === 'looks') buildPresetRow();
@@ -3646,6 +3923,8 @@ async function refreshThumb() {
   } catch (e) { /* keep the old thumbnail */ }
 }
 function closeEditorView() {
+  if (state.histR) { state.histR.dispose(); state.histR = null; } state.histFor = null; state.hist = null; histCv.hidden = true; curveBox.hidden = true; state.sub = null;
+  clearTimeout(resTimer); state.resToken++; state.hiRes = false; state.base = null;
   state.photo = null; state.src = null; state.orig = false; state.split.on = false; placeSplit();
   $('#editor').hidden = true; document.body.classList.remove('in-editor'); syncThemeColor();
   showView('#library');
@@ -3692,12 +3971,12 @@ $('#favBtn').addEventListener('click', async () => {
 /* ---------- more: photo info, copy and paste, revert, save look, remove (action sheet) ---------- */
 $('#moreBtn').addEventListener('click', () => {
   const p = state.photo; if (!p) return;
-  const acts = [{ label: t('quickActions'), icon: 'wand', run: () => { closeSheet(); openQuickActions(); } }, { label: t('copyAdj'), icon: 'copy', run: () => { closeSheet(); openCopySheet(); } }];
+  const acts = [{ label: t('quickActions'), icon: 'wand', run: () => { closeSheet(); openQuickActions(); } }, { label: state.showHist ? t('hideHist') : t('showHist'), icon: 'histogram', run: () => { closeSheet(); toggleHist(); } }, { label: t('copyAdj'), icon: 'copy', run: () => { closeSheet(); openCopySheet(); } }];
   if (state.clipboard) acts.push({ label: t('pasteAdj'), icon: 'paste', run: () => { closeSheet(); pasteHere(); } });
   if (state.src) acts.push({ label: t('saveAsLook'), icon: 'looks', run: () => { closeSheet(); openSavePreset(); } });
   if (state.src && !isDefault(state.settings)) acts.push({ label: t('revertAll'), icon: 'revert', run: () => {
     closeSheet();
-    const next = { ...DEFAULTS, crop: { ...DEFAULT_CROP }, preset: null, masks: [], heal: [] };
+    const next = { ...DEFAULTS, crop: { ...DEFAULT_CROP }, preset: null, masks: [], heal: [], curve: null };
     if (cropIsIdentity(state.settings.crop)) crossfade();
     state.settings = next; state.autoPrev = null; syncHeal(); commit(); layout(); syncControls(); requestDraw(); scheduleSave();
     if (state.mode === 'looks') syncPresetTiles();

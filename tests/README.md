@@ -13,7 +13,9 @@ node tests/run.js masks looks    # only some
 | engine | existing edits render pixel-identical to the 2.0 engine |
 | main | library, editor, gestures, ruler, undo, crop, looks, export, upgrade from 1.x |
 | effects | Effects tab, Lens Blur focus, Color Mixer, Color Grading, copy/paste |
-| masks | linear, radial and brush masks, erase, invert, Remove |
+| masks | linear, radial and brush masks, erase, invert, Remove (including a second fix and undo) |
+| curve | Tone Curve: add, drag, remove points, channels, export; the histogram |
+| zoom | sharper zoom: the larger copy loads past 1.6x, the look stays the same, small photos don't switch |
 | looks | catalogue, Recommended, Quick Actions |
 | png | PNG import to JPG, transparency on white |
 | large-png | 24 and 48 MP PNGs scaled under Safari's canvas limit |

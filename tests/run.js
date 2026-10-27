@@ -6,7 +6,7 @@
 // Starts its own static server; screenshots and temporary files go to tests/.out (not committed).
 const http = require('http'), fs = require('fs'), path = require('path'), zlib = require('zlib'), { spawn } = require('child_process');
 const ROOT = path.join(__dirname, '..'), FIX = path.join(__dirname, 'fixtures'), OUT = path.join(__dirname, '.out');
-const ALL = ['engine', 'main', 'effects', 'masks', 'looks', 'png', 'large-png', 'backup', 'english', 'layout'];
+const ALL = ['engine', 'main', 'effects', 'masks', 'curve', 'zoom', 'looks', 'png', 'large-png', 'backup', 'english', 'layout'];
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.png': 'image/png', '.jpg': 'image/jpeg' };
 
 // large transparent PNGs for the import test, made here rather than stored (a dark frame, a violet ellipse, a blue edge stripe)

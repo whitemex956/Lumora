@@ -17,6 +17,14 @@ Live: https://whitemex956.github.io/Lumora/ (open in Safari, Share > Add to Home
 - Export sheet with live preview, output resolution, estimated then real file size, quality, and Share / Save to Photos.
 - English by default on every device; Spanish can be chosen in Settings. Light and dark, Reduce Motion and Reduce Transparency respected.
 
+## 2.2
+
+- Tone Curve (Light › Curve): RGB and per-channel curves, edited over the photo with its histogram behind.
+- Histogram: a live RGB histogram in the corner of the photo (••• › Show Histogram, or H).
+- Sharper zoom: past 1.6x the photo is reloaded at up to 4096 px; back to 2048 px at fit.
+- Faster: Remove applies only the new fix, brush masks redraw only the stroke being painted, and the blurred copies some effects need are made on first use.
+- Tests: `node tests/run.js` runs the browser test suites (see tests/README.md).
+
 ## 2.1: premium tools, all on the device
 
 - Effects: clarity, texture, dehaze, vignette, grain, sharpening, noise reduction, lens corrections (distortion, vignetting, chromatic aberration) and Lens Blur with a focus area set on the photo.
