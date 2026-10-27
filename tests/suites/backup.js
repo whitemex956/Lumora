@@ -1,0 +1,61 @@
+const { chromium } = require('playwright'); const fs = require('fs');
+const S = process.env.LUMORA_OUT, FIX = process.env.LUMORA_FIXTURES, BASE = process.env.LUMORA_URL, SH = S + '/shots/premium';
+const res = []; const ok = (n, c, i = '') => res.push([c ? 'PASS' : 'FAIL', n, i]);
+(async () => {
+  const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+  const mk = () => b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true, acceptDownloads: true });
+  const errs = [];
+  // device A
+  const A = await mk(); const p = await A.newPage(); p.on('pageerror', e => errs.push(e.message));
+  await p.goto(BASE + '/index.html'); await p.waitForTimeout(800);
+  await p.setInputFiles('#pick', [FIX + '/landscape.jpg', FIX + '/blemish.jpg', FIX + '/transparent.png']); await p.waitForTimeout(3500);
+  await p.click('.tile[aria-label^="blemish"]'); await p.waitForTimeout(2500);
+  await p.click('#adjValue'); await p.keyboard.press('Control+A'); await p.keyboard.type('0.7'); await p.keyboard.press('Enter'); await p.waitForTimeout(300);
+  await p.click('#favBtn');
+  await p.click('#mode-masks'); await p.click('#addRadial'); await p.waitForTimeout(300);
+  await p.click('#adjValue'); await p.keyboard.press('Control+A'); await p.keyboard.type('-1'); await p.keyboard.press('Enter'); await p.waitForTimeout(300);
+  await p.click('#pane-maskedit .mask-back'); await p.click('#openHeal'); await p.waitForTimeout(300);
+  const cb = await p.locator('#clip').boundingBox(), cx = cb.x + cb.width * .5, cy = cb.y + cb.height * 500 / 1067;
+  await p.mouse.move(cx - 6, cy); await p.mouse.down(); await p.mouse.move(cx + 6, cy, { steps: 4 }); await p.mouse.up(); await p.waitForTimeout(2000);
+  await p.click('#mode-looks'); await p.waitForTimeout(800); await p.click('#presetRow .ptile.add'); await p.waitForTimeout(400);
+  await p.fill('#presetName', 'Backup look'); await p.click('.sheet-nav .btn.strong'); await p.waitForTimeout(600);
+  await p.click('#back'); await p.waitForTimeout(2500);
+  await p.click('#settingsBtn'); await p.waitForTimeout(500);
+  await p.screenshot({ path: SH + '/30-settings-backup.png' });
+  const [dl] = await Promise.all([p.waitForEvent('download'), p.click('.sheet .bk-row .btn >> nth=0')]);
+  const bk = S + '/test-backup.lumora'; fs.copyFileSync(await dl.path(), bk); await p.waitForTimeout(500);
+  const buf = fs.readFileSync(bk);
+  ok('backup file written', buf.slice(0, 10).toString() === 'LUMORABK1\n' && /lumora-backup-\d{4}-\d\d-\d\d\.lumora/.test(dl.suggestedFilename()), `${dl.suggestedFilename()}, ${buf.length} bytes`);
+  ok('toast confirms', /Backup ready: 3 photos/.test(await p.textContent('#toast')), await p.textContent('#toast'));
+  // device B: empty
+  const B = await mk(); const q = await B.newPage(); q.on('pageerror', e => errs.push(e.message));
+  await q.goto(BASE + '/index.html'); await q.waitForTimeout(800);
+  ok('device B starts empty', (await q.locator('.tile').count()) === 0);
+  await q.click('#settingsBtn'); await q.waitForTimeout(400);
+  await q.setInputFiles('#restorePick', bk); await q.waitForTimeout(5000);
+  ok('3 photos restored', (await q.locator('.tile').count()) === 3, await q.textContent('#toast'));
+  ok('restore toast', /Restored 3 photos; 1 look/.test(await q.textContent('#toast')), await q.textContent('#toast'));
+  const labels = await q.locator('.tile').evaluateAll(a => a.map(x => x.getAttribute('aria-label')));
+  ok('edit and favorite came back', labels.some(l => /blemish.*edited.*favorite/.test(l)), labels.join(' | '));
+  await q.click('.tile[aria-label^="blemish"]'); await q.waitForTimeout(2500);
+  ok('exposure restored', +(await q.getAttribute('#ruler', 'aria-valuenow')) === 0.7);
+  await q.click('#mode-masks'); await q.waitForTimeout(400);
+  ok('mask and Remove fix restored', (await q.locator('#maskChips .mchip').count()) === 1 && /1 Remove fix/.test(await q.textContent('#maskChips')));
+  const red = await q.evaluate(async () => 0);
+  await q.click('#mode-looks'); await q.waitForTimeout(800); await q.click('#presetRow .ptile.browse'); await q.waitForTimeout(800);
+  await q.click('.sheet .seg button >> text=Yours'); await q.waitForTimeout(600);
+  ok('your look restored', (await q.locator('.sheet .lb-tile').allTextContents()).includes('Backup look'));
+  await q.click('.sheet-nav .btn.strong'); await q.waitForTimeout(400); await q.click('#back'); await q.waitForTimeout(2000);
+  // second restore adds nothing
+  await q.click('#settingsBtn'); await q.waitForTimeout(400);
+  await q.setInputFiles('#restorePick', bk); await q.waitForTimeout(3000);
+  ok('restoring again adds nothing', (await q.locator('.tile').count()) === 3 && /Restored 0 photos; 3 already here/.test(await q.textContent('#toast')), await q.textContent('#toast'));
+  // a wrong file
+  fs.writeFileSync(S + '/not-a-backup.lumora', 'hello');
+  await q.click('#settingsBtn'); await q.waitForTimeout(400);
+  await q.setInputFiles('#restorePick', S + '/not-a-backup.lumora'); await q.waitForTimeout(1200);
+  ok('a wrong file is refused', /isn’t a Lumora backup/.test(await q.textContent('#toast')), await q.textContent('#toast'));
+  ok('no errors', errs.length === 0, errs.join(' / '));
+  for (const r of res) console.log(r.join('\t')); console.log(res.filter(r => r[0] === 'FAIL').length, 'failed of', res.length);
+  await b.close();
+})().catch(e => { console.error(e); for (const r of res) console.log(r.join('\t')); process.exit(1); });

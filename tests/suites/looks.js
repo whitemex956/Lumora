@@ -1,0 +1,67 @@
+const { chromium } = require('playwright'); const fs = require('fs');
+const S = process.env.LUMORA_OUT, FIX = process.env.LUMORA_FIXTURES, BASE = process.env.LUMORA_URL, SH = S + '/shots/premium';
+const res = []; const ok = (n, c, i = '') => res.push([c ? 'PASS' : 'FAIL', n, i]);
+(async () => {
+  const b = await chromium.launch({ args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader'] });
+  const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+  const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message)); p.on('console', m => m.type() === 'error' && errs.push(m.text()));
+  await p.goto(BASE + '/index.html'); await p.waitForTimeout(800);
+  await p.setInputFiles('#pick', [FIX + '/landscape.jpg', FIX + '/portrait.jpg']); await p.waitForTimeout(3000);
+  await p.click('.tile[aria-label^="landscape"]'); await p.waitForTimeout(2500);
+  await p.click('#mode-looks'); await p.waitForTimeout(1500);
+  const tray = await p.locator('#presetRow .ptile[data-id]').count();
+  ok('tray opens on Recommended with 12 looks', (await p.textContent('#presetRow .ptile.browse span:last-child')) === 'For you' && tray === 13, `${tray - 1} looks`);
+  await p.screenshot({ path: SH + '/20-looks-tray.png' });
+  await p.click('#presetRow .ptile.browse'); await p.waitForTimeout(1500);
+  ok('browser opens on Recommended', (await p.locator('.sheet .seg button[aria-pressed="true"]').textContent()) === 'Recommended');
+  const why = await p.textContent('.sheet .lb-body .facts');
+  ok('explains the recommendation', /Picked for this photo/.test(why), why);
+  await p.screenshot({ path: SH + '/21-recommended.png' });
+  await p.click('.sheet .seg button >> text=Categories'); await p.waitForTimeout(1500);
+  const rows = await p.locator('.lb-row').count(), total = await p.textContent('.sheet .lb-body .facts');
+  ok('13 categories, 154 looks', rows === 13 && /154 looks/.test(total), `${rows} rows, ${total}`);
+  const counts = await p.locator('.lb-count').allTextContents();
+  ok('each category lists its looks', counts.join(',') === '10,12,12,12,12,12,12,12,12,12,12,12,12', counts.join(','));
+  await p.screenshot({ path: SH + '/22-categories.png' });
+  await p.click('.lb-row >> text=Cinematic'); await p.waitForTimeout(1500);
+  ok('category grid', (await p.locator('.lb-grid .lb-tile').count()) === 12);
+  const blank = await p.evaluate(() => { const c = document.querySelector('.lb-grid canvas'); const d = c.getContext('2d').getImageData(110, 110, 1, 1).data; return d[3]; });
+  ok('previews rendered', blank === 255);
+  await p.screenshot({ path: SH + '/23-cinematic.png' });
+  await p.click('.lb-tile >> nth=2'); await p.waitForTimeout(600);
+  ok('tap applies the look', (await p.textContent('#adjName')).includes('Cinematic 03'), await p.textContent('#adjName'));
+  await p.click('.sheet-nav .btn.strong'); await p.waitForTimeout(600);
+  ok('tray now shows Cinematic', (await p.textContent('#presetRow .ptile.browse span:last-child')) === 'Cinematic');
+  // strength 50 keeps the grading hue
+  await p.click('#adjValue'); await p.keyboard.press('Control+A'); await p.keyboard.type('50'); await p.keyboard.press('Enter'); await p.waitForTimeout(400);
+  ok('strength changes', +(await p.getAttribute('#ruler', 'aria-valuenow')) === 50);
+  // Quick Actions
+  await p.click('#mode-light'); await p.waitForTimeout(400);
+  ok('Quick Actions button in Light', await p.locator('#quickBtn').isVisible());
+  await p.click('#quickBtn'); await p.waitForTimeout(1500);
+  ok('15 quick actions with previews', (await p.locator('.sheet .lb-tile').count()) === 15);
+  await p.screenshot({ path: SH + '/24-quick.png' });
+  const ev0 = +(await p.getAttribute('#ruler', 'aria-valuenow'));
+  await p.click('.sheet .lb-tile >> text=Brighten'); await p.waitForTimeout(800);
+  await p.click('#adj-exposure'); await p.waitForTimeout(300);
+  ok('Brighten adds +0.4 EV', Math.abs(+(await p.getAttribute('#ruler', 'aria-valuenow')) - 0.4) < 1e-6 && /Brighten applied/.test(await p.textContent('#toast')));
+  await p.click('#undoBtn'); await p.waitForTimeout(400);
+  ok('undo removes it', +(await p.getAttribute('#ruler', 'aria-valuenow')) === 0);
+  await p.click('#moreBtn'); await p.waitForTimeout(400);
+  ok('Quick Actions also in the ••• menu', await p.locator('.as-btn >> text=Quick Actions').isVisible());
+  await p.click('.as-btn >> text=Quick Actions'); await p.waitForTimeout(800);
+  await p.click('.sheet .lb-tile >> text=Blur Background'); await p.waitForTimeout(600);
+  await p.click('#mode-effects'); await p.click('#adj-lensBlur'); await p.waitForTimeout(300);
+  ok('Blur Background sets lens blur', +(await p.getAttribute('#ruler', 'aria-valuenow')) === 70);
+  // persistence of a catalogue look
+  await p.click('#back'); await p.waitForTimeout(2500); await p.reload(); await p.waitForTimeout(1500);
+  await p.click('.tile[aria-label^="landscape"]'); await p.waitForTimeout(2500); await p.click('#mode-looks'); await p.waitForTimeout(1200);
+  ok('catalogue look saved', (await p.textContent('#adjName')).includes('Cinematic 03'));
+  // the portrait gets a different recommendation
+  await p.click('#back'); await p.waitForTimeout(2000); await p.click('.tile[aria-label^="portrait"]'); await p.waitForTimeout(2500);
+  await p.click('#mode-looks'); await p.waitForTimeout(1200); await p.click('#presetRow .ptile.browse'); await p.waitForTimeout(1200);
+  ok('recommendation follows the photo', (await p.textContent('.sheet .lb-body .facts')) !== why, await p.textContent('.sheet .lb-body .facts'));
+  ok('no errors', errs.length === 0, errs.join(' / '));
+  for (const r of res) console.log(r.join('\t')); console.log(res.filter(r => r[0] === 'FAIL').length, 'failed of', res.length);
+  await b.close();
+})().catch(e => { console.error(e); for (const r of res) console.log(r.join('\t')); process.exit(1); });
