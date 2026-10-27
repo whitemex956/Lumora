@@ -102,6 +102,13 @@ W,H=a.size; print(a.getpixel((W//2,H//20)) - b.getpixel((W//2,H//20)), a.getpixe
   ok('undo brings the spot back', (await lum(.5, 500 / 1067))[0] > 180);
   await p.click('#redoBtn'); await p.waitForTimeout(1500);
   ok('redo removes it again', (await lum(.5, 500 / 1067))[0] < 170);
+  // a second fix takes the fast path (only the new spot is applied and uploaded); undo then re-applies from the original
+  const plain0 = await lum(.25, 300 / 1067);
+  await p.mouse.move(cb.x + cb.width * .25 - 6, cb.y + cb.height * 300 / 1067); await p.mouse.down(); await p.mouse.move(cb.x + cb.width * .25 + 6, cb.y + cb.height * 300 / 1067, { steps: 4 }); await p.mouse.up(); await p.waitForTimeout(1500);
+  const plain1 = await lum(.25, 300 / 1067);
+  ok('second fix keeps the first one and blends in', (await lum(.5, 500 / 1067))[0] < 170 && Math.abs(L(plain1) - L(plain0)) < 15, `${plain0} -> ${plain1}`);
+  await p.click('#undoBtn'); await p.waitForTimeout(1500);
+  ok('undo of the second fix keeps the first', (await lum(.5, 500 / 1067))[0] < 170);
   await p.click('#back'); await p.waitForTimeout(2500);
   const thumbRed = await p.evaluate(async () => { const img = document.querySelector('.tile[aria-label^="blemish"] img'); await img.decode(); const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight; const g = c.getContext('2d'); g.drawImage(img, 0, 0); const d = g.getImageData(Math.round(c.width / 2), Math.round(c.height * 500 / 1067), 1, 1).data; return [...d].slice(0, 3); });
   ok('library thumbnail without the spot', thumbRed[0] < 170, thumbRed.join(','));

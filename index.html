@@ -1186,9 +1186,11 @@ function fit(w, h, maxEdge, maxPx) {
   return [Math.max(1, Math.round(w * s)), Math.max(1, Math.round(h * s))];
 }
 // transparent areas (PNG) are flattened onto white: JPG has no transparency, and the editor works on opaque pixels
-function rasterize(src, w, h) {
+// cpu: keep the pixels in memory (willReadFrequently) when they will be read back, as Remove does;
+// reading a GPU canvas back costs a full copy each time (about 250 ms for 2048 px in testing)
+function rasterize(src, w, h, cpu = false) {
   const c = document.createElement('canvas'); c.width = w; c.height = h;
-  const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+  const ctx = c.getContext('2d', cpu ? { willReadFrequently: true } : undefined); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
   ctx.imageSmoothingQuality = 'high'; ctx.drawImage(src, 0, 0, w, h);
   return c;
 }
@@ -1228,7 +1230,8 @@ uniform vec4 crop2;  // crop centre and half size, px of the oriented image
 uniform bool mixOn; uniform float mixH[8]; uniform float mixS[8]; uniform float mixL[8];   // colour mixer, -1..1 per hue
 uniform vec4 grade1; // shadows hue (0..1), sat, highlights hue, sat
 uniform vec4 grade2; // midtones hue, sat, balance -1..1, blending -1..1
-uniform sampler2D maskTex;  // up to four masks, one per channel, in image coordinates
+uniform sampler2D mask0, mask1, mask2, mask3;  // up to four masks: coverage in alpha, image coordinates
+uniform vec4 maskInv;                          // 1 where a mask is inverted
 uniform bool maskOn; uniform vec4 mEv, mCon, mHi, mSh, mTemp, mTint, mSat, mCla;   // each mask's local adjustments, one per channel
 uniform int overlay;        // the mask shown in red while it is edited, -1 = none
 const vec3 LW = vec3(.2126, .7152, .0722);
@@ -1252,7 +1255,8 @@ void main() {
   if (orig || split.z * (uv.x - .5) * size.x * split.x - (uv.y - .5) * size.y * split.y < split.w) { o = vec4(t.rgb, 1.); return; }
   // masks add their own amounts to the global ones, weighted by how much each mask covers this pixel
   float ev_ = ev, con_ = con, cla_ = fx.x; vec4 tone_ = tone; vec2 wb_ = wb, col_ = col;
-  if (maskOn) { vec4 mk = texture(maskTex, uv);
+  vec4 mk = vec4(0.);
+  if (maskOn) { mk = vec4(texture(mask0, uv).a, texture(mask1, uv).a, texture(mask2, uv).a, texture(mask3, uv).a); mk = mix(mk, 1. - mk, maskInv);
     ev_ += dot(mk, mEv); con_ += dot(mk, mCon); tone_.x += dot(mk, mHi); tone_.y += dot(mk, mSh);
     wb_ += vec2(dot(mk, mTemp), dot(mk, mTint)); col_.y += dot(mk, mSat); cla_ += dot(mk, mCla); }
   vec2 st = uv;                                   // where to read the photo (lens distortion moves it)
@@ -1366,7 +1370,7 @@ void main() {
     l = pow(max(c, 0.), vec3(2.2));
   }
   vec3 outc = toSrgb(max(l, 0.));
-  if (overlay >= 0) outc = mix(outc, vec3(.95, .22, .3), texture(maskTex, uv)[overlay] * .5);
+  if (overlay >= 0) outc = mix(outc, vec3(.95, .22, .3), mk[overlay] * .5);
   o = vec4(outc, 1.);
 }`;
 // a soft copy of the image at 1/f of its size: halve until close, then three box-blur passes
@@ -1406,27 +1410,19 @@ function drawStroke(g, st, w, h, L, color = '#fff') {   // a soft round stroke: 
   if (pts.length === 2) g.lineTo(pts[0] * w - off + .01, pts[1] * h);
   g.stroke(); g.restore();
 }
-function rasterMasks(ms, W, H) {
-  const k = Math.min(1, 1024 / Math.max(W, H)), w = Math.max(1, Math.round(W * k)), h = Math.max(1, Math.round(H * k)), L = Math.max(w, h);
-  const data = new Uint8Array(w * h * 4);
-  const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d', { willReadFrequently: true });
-  ms.forEach((m, ch) => {
-    const G = m.geo || {};
-    g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, w, h);
-    if (m.type === 'linear') {          // full effect before the first line, none after the second
-      const gr = g.createLinearGradient(G.x0 * w, G.y0 * h, G.x1 * w, G.y1 * h); gr.addColorStop(0, '#fff'); gr.addColorStop(1, 'rgba(255,255,255,0)');
-      g.fillStyle = gr; g.fillRect(0, 0, w, h);
-    } else if (m.type === 'radial') {   // an ellipse, soft over its outer part
-      g.translate(G.cx * w, G.cy * h); g.scale(Math.max(1e-3, G.rx) * L, Math.max(1e-3, G.ry) * L);
-      const gr = g.createRadialGradient(0, 0, Math.max(0, 1 - (G.feather === undefined ? .5 : G.feather)), 0, 0, 1);
-      gr.addColorStop(0, '#fff'); gr.addColorStop(1, 'rgba(255,255,255,0)');
-      g.fillStyle = gr; g.beginPath(); g.arc(0, 0, 1, 0, Math.PI * 2); g.fill();
-      g.setTransform(1, 0, 0, 1, 0, 0);
-    } else for (const st of G.strokes || []) drawStroke(g, st, w, h, L);
-    const px = g.getImageData(0, 0, w, h).data;
-    for (let i = 3, j = ch; i < px.length; i += 4, j += 4) data[j] = m.invert ? 255 - px[i] : px[i];   // coverage = alpha
-  });
-  return { w, h, data };
+function paintMaskShape(g, m, w, h, L) {   // linear and radial masks
+  const G = m.geo || {};
+  g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, w, h);
+  if (m.type === 'linear') {          // full effect before the first line, none after the second
+    const gr = g.createLinearGradient(G.x0 * w, G.y0 * h, G.x1 * w, G.y1 * h); gr.addColorStop(0, '#fff'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  } else {                            // an ellipse, soft over its outer part
+    g.translate(G.cx * w, G.cy * h); g.scale(Math.max(1e-3, G.rx) * L, Math.max(1e-3, G.ry) * L);
+    const gr = g.createRadialGradient(0, 0, Math.max(0, 1 - (G.feather === undefined ? .5 : G.feather)), 0, 0, 1);
+    gr.addColorStop(0, '#fff'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = gr; g.beginPath(); g.arc(0, 0, 1, 0, Math.PI * 2); g.fill();
+    g.setTransform(1, 0, 0, 1, 0, 0);
+  }
 }
 /* Remove: each spot is a soft stroke filled from a nearby patch (offset dx, dy as fractions of the image),
    with the patch's colour shifted to match the surroundings. Applied to the pixels before any adjustment. */
@@ -1462,7 +1458,7 @@ function applyHeal(src, spots) {
   const out = document.createElement('canvas'); out.width = W; out.height = H;
   const g = out.getContext('2d', { willReadFrequently: true }); g.drawImage(src, 0, 0);
   for (const sp of spots) healSpot(g, sp, W, H, L);
-  return out;
+  return out;   // a CPU canvas: the next spot can be applied to it directly
 }
 // the best nearby patch: compare the ring just outside the stroke with the same ring around candidate offsets
 function findHealSource(src, sp) {
@@ -1509,8 +1505,8 @@ class Renderer {
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
     this.u = Object.fromEntries(['ev', 'con', 'tone', 'wb', 'col', 'orig', 'split', 'size', 'optics', 'detail', 'fx', 'lens', 'vg', 'crop1', 'crop2',
-      'mixOn', 'mixH', 'mixS', 'mixL', 'grade1', 'grade2', 'maskOn', 'mEv', 'mCon', 'mHi', 'mSh', 'mTemp', 'mTint', 'mSat', 'mCla', 'overlay'].map((n) => [n, gl.getUniformLocation(pr, n)]));
-    this.texs = ['img', 'blurS', 'blurM', 'blurL', 'maskTex'].map((n, i) => {
+      'mixOn', 'mixH', 'mixS', 'mixL', 'grade1', 'grade2', 'maskOn', 'maskInv', 'mEv', 'mCon', 'mHi', 'mSh', 'mTemp', 'mTint', 'mSat', 'mCla', 'overlay'].map((n) => [n, gl.getUniformLocation(pr, n)]));
+    this.texs = ['img', 'blurS', 'blurM', 'blurL', 'mask0', 'mask1', 'mask2', 'mask3'].map((n, i) => {
       gl.uniform1i(gl.getUniformLocation(pr, n), i);
       gl.activeTexture(gl.TEXTURE0 + i);
       const tx = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, tx);
@@ -1518,36 +1514,78 @@ class Renderer {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));   // empty until needed
       return tx;
     });
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4));   // the mask unit, empty until a mask exists
+    this.mk = [0, 1, 2, 3].map(() => ({ cv: null, base: null, refs: null, sig: '' }));   // per-mask canvases and what they hold
     this.maxTex = gl.getParameter(gl.MAX_TEXTURE_SIZE);
   }
   setImage(src) {
-    this.maskKey = null;
     const gl = this.gl;
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-    [src, blurCopy(src, 4), blurCopy(src, 12), blurCopy(src, 40)].forEach((im, i) => {
-      gl.activeTexture(gl.TEXTURE0 + i); gl.bindTexture(gl.TEXTURE_2D, this.texs[i]);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im);
-      if (i) im.width = im.height = 0;
-    });
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.texs[0]);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, src);
+    this.src = src; this.blurDirty = true;   // the blurred copies are made when an effect first needs them
+    for (const m of this.mk) m.sig = '';
     this.canvas.width = src.width; this.canvas.height = src.height; this.w = src.width; this.h = src.height;
     gl.viewport(0, 0, src.width, src.height);
     gl.uniform2f(this.u.size, src.width, src.height);
   }
+  // after Remove changes one region of the photo: upload only that part
+  updateRegion(src, b) {
+    const gl = this.gl, d = src.getContext('2d', { willReadFrequently: true }).getImageData(b.x, b.y, b.w, b.h);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.texs[0]);
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, b.x, b.y, gl.RGBA, gl.UNSIGNED_BYTE, d);
+    this.src = src; this.blurDirty = true;
+  }
+  ensureBlur() {
+    if (!this.blurDirty) return;
+    const gl = this.gl;
+    [blurCopy(this.src, 4), blurCopy(this.src, 12), blurCopy(this.src, 40)].forEach((im, i) => {
+      gl.activeTexture(gl.TEXTURE1 + i); gl.bindTexture(gl.TEXTURE_2D, this.texs[1 + i]);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, im); im.width = im.height = 0;
+    });
+    this.blurDirty = false;
+  }
+  // one mask onto its own canvas and texture; a brush keeps its finished strokes and redraws only the newest
+  updateMask(i, m) {
+    const gl = this.gl, c = this.mk[i], k = Math.min(1, 1024 / Math.max(this.w, this.h));
+    const w = Math.max(1, Math.round(this.w * k)), h = Math.max(1, Math.round(this.h * k)), L = Math.max(w, h);
+    const mkCv = () => { const v = document.createElement('canvas'); v.width = w; v.height = h; return v; };
+    if (!c.cv || c.cv.width !== w || c.cv.height !== h) { c.cv = mkCv(); c.base = mkCv(); c.refs = null; c.sig = ''; }
+    const g = c.cv.getContext('2d');
+    let sig;
+    if (m.type === 'brush') {
+      const st = (m.geo && m.geo.strokes) || [], done = st.slice(0, -1), last = st[st.length - 1];
+      if (!c.refs || c.refs.length !== done.length || done.some((x, j) => x !== c.refs[j])) {
+        const bg = c.base.getContext('2d'); bg.setTransform(1, 0, 0, 1, 0, 0); bg.clearRect(0, 0, w, h);
+        for (const x of done) drawStroke(bg, x, w, h, L);
+        c.refs = done; c.sig = '';
+      }
+      sig = 'b' + (last ? `${st.length}:${last.pts.length}:${last.size}:${last.erase ? 1 : 0}` : '0');
+      if (sig === c.sig && last === c.last) return;
+      g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, w, h); g.drawImage(c.base, 0, 0);
+      if (last) drawStroke(g, last, w, h, L);
+      c.last = last;
+    } else {
+      sig = m.type + JSON.stringify(m.geo);
+      if (sig === c.sig) return;
+      paintMaskShape(g, m, w, h, L); c.refs = null;
+    }
+    c.sig = sig;
+    gl.activeTexture(gl.TEXTURE4 + i); gl.bindTexture(gl.TEXTURE_2D, this.texs[4 + i]);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);    // only alpha is used: skip un-premultiplying the canvas (slow)
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, c.cv);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+  }
   draw(s, orig = false, split = null, overlay = -1) {
     const gl = this.gl;
     const ms = (s.masks || []).slice(0, 4);
+    if (s.clarity || s.texture || s.dehaze || s.noise || s.lensBlur || ms.some((m) => m.adj && m.adj.clarity)) this.ensureBlur();
     gl.uniform1i(this.u.maskOn, ms.length ? 1 : 0);
     if (ms.length) {
-      const key = JSON.stringify(ms.map((m) => [m.type, m.geo, m.invert]));
-      if (key !== this.maskKey) {
-        this.maskKey = key;
-        const r = rasterMasks(ms, this.w, this.h);
-        gl.activeTexture(gl.TEXTURE4); gl.bindTexture(gl.TEXTURE_2D, this.texs[4]);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, r.w, r.h, 0, gl.RGBA, gl.UNSIGNED_BYTE, r.data);
-      }
+      ms.forEach((m, i) => this.updateMask(i, m));
+      gl.uniform4f(this.u.maskInv, ...[0, 1, 2, 3].map((i) => (ms[i] && ms[i].invert ? 1 : 0)));
       const per = (f) => [0, 1, 2, 3].map((i) => (ms[i] ? f(ms[i].adj || {}) : 0));
       gl.uniform4f(this.u.mEv, ...per((a) => a.exposure || 0));
       gl.uniform4f(this.u.mCon, ...per((a) => (a.contrast || 0) / 100 * .6));
@@ -1977,7 +2015,7 @@ $('#restorePick').addEventListener('change', (e) => { const f = e.target.files[0
 /* ---------- editor state ---------- */
 const state = { photo: null, settings: { ...DEFAULTS, crop: { ...DEFAULT_CROP }, preset: null, masks: [], heal: [] }, src: null, renderer: null, orig: false, compareLock: false, frame: 0,
   saveTimer: 0, changed: false, adj: 'exposure', adjByMode: { light: 'exposure', color: 'temp', effects: 'clarity' }, history: [], hIndex: -1, autoPrev: null,
-  mode: 'light', view: { k: 1 }, userPresets: [], selecting: false, selected: new Set(), clipboard: null, split: { on: false, x: 0 }, editingValue: false, sub: null, lookCat: 'recommended', recommended: null, maskPane: 'masks', maskSel: -1, maskParam: 'exposure', brushSize: 30, brushErase: false, showOverlay: false, overlayUntil: 0, base: null, healKey: '[]', mixColor: 0, mixAttr: 'H', gradeRegion: 'Sh', gradeAttr: 'H' };
+  mode: 'light', view: { k: 1 }, userPresets: [], selecting: false, selected: new Set(), clipboard: null, split: { on: false, x: 0 }, editingValue: false, sub: null, lookCat: 'recommended', recommended: null, maskPane: 'masks', maskSel: -1, maskParam: 'exposure', brushSize: 30, brushErase: false, showOverlay: false, overlayUntil: 0, base: null, healKey: '[]', healCount: 0, mixColor: 0, mixAttr: 'H', gradeRegion: 'Sh', gradeAttr: 'H' };
 const canvas = $('#view');
 function ensureRenderer() {
   if (!state.renderer) state.renderer = new Renderer(canvas);
@@ -2289,16 +2327,25 @@ $('#maskDelete').addEventListener('click', () => {
   state.settings.masks.splice(state.maskSel, 1); commit(); scheduleSave(); requestDraw(); backToMasks();
 });
 $('#healClear').addEventListener('click', () => { state.settings.heal = []; syncHeal(); commit(); scheduleSave(); syncControls(); });
-// Remove: re-apply every spot to the untouched copy when the list changes (stroke, undo, clear)
+// Remove: a new spot is applied on its own to the current copy and only its region is uploaded;
+// any other change to the list (undo, clear) re-applies every spot to the untouched copy
 function syncHeal(force) {
   if (!state.base) return;
-  const key = JSON.stringify(state.settings.heal || []);
+  const spots = state.settings.heal || [], key = JSON.stringify(spots);
   if (!force && key === state.healKey) return;
-  state.healKey = key;
-  const prev = state.src;
-  state.src = state.settings.heal.length ? applyHeal(state.base, state.settings.heal) : state.base; state.recommended = null;
-  if (prev && prev !== state.base && prev !== state.src) prev.width = prev.height = 0;
-  if (state.renderer && !force) { state.renderer.setImage(state.src); requestDraw(); }
+  const W = state.base.width, H = state.base.height, L = Math.max(W, H);
+  if (!force && state.renderer && state.src !== state.base && spots.length === state.healCount + 1 && key.startsWith(state.healKey.slice(0, -1))) {
+    const sp = spots[spots.length - 1];
+    healSpot(state.src.getContext('2d', { willReadFrequently: true }), sp, W, H, L);
+    state.renderer.updateRegion(state.src, spotBox(sp, W, H, L));
+  } else {
+    const prev = state.src;
+    state.src = spots.length ? applyHeal(state.base, spots) : state.base;
+    if (prev && prev !== state.base && prev !== state.src) prev.width = prev.height = 0;
+    if (state.renderer && !force) state.renderer.setImage(state.src);
+  }
+  state.healKey = key; state.healCount = spots.length; state.recommended = null;
+  if (!force) requestDraw();
 }
 // linear and radial masks are shaped with handles on the photo
 const svgNS = 'http://www.w3.org/2000/svg', handlesEl = $('#maskSvg');
@@ -3574,8 +3621,8 @@ async function openEditor(p, fromImg) {
   try {
     const { img, done } = await decode(p.original);
     const [w, h] = fit(img.naturalWidth, img.naturalHeight, PREVIEW_EDGE, PREVIEW_PX);
-    state.base = rasterize(img, w, h); done();
-    state.src = state.base; state.healKey = '[]'; syncHeal(true);
+    state.base = rasterize(img, w, h, true); done();
+    state.src = state.base; state.healKey = '[]'; state.healCount = 0; syncHeal(true);
     ensureRenderer().setImage(state.src);
     canvas.hidden = false; layout(); syncControls(); requestDraw();
     if (state.mode === 'looks') buildPresetRow();
@@ -3752,7 +3799,7 @@ async function doExport(limit, quality) {
     const { img, done } = await decode(p.original);
     const off = document.createElement('canvas'); const r = new Renderer(off, true);
     const [w, h] = fit(img.naturalWidth, img.naturalHeight, Math.min(r.maxTex, 8192), EXPORT_PX);
-    let src = rasterize(img, w, h); done();
+    let src = rasterize(img, w, h, (state.settings.heal || []).length > 0); done();
     if ((state.settings.heal || []).length) { const hs = applyHeal(src, state.settings.heal); src.width = src.height = 0; src = hs; }
     r.setImage(src); r.draw(effective(state.settings));
     const c = state.settings.crop;
